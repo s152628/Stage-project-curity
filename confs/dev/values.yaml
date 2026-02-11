@@ -21,7 +21,18 @@ curity:
       type: ClusterIP
       port: 8443
 ingress:
-  runtime:
-    enabled: false 
   admin:
-    enabled: false
+    enabled: true
+    ingressClassName: nginx
+    host: curity-admin.local
+    paths:
+      - /
+    pathType: ImplementationSpecific
+    
+  runtime:
+    enabled: true
+    ingressClassName: nginx
+    host: curity.local
+    paths:
+      - /
+    pathType: ImplementationSpecific
