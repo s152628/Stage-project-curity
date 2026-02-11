@@ -1,10 +1,10 @@
 curity:
   config:
     license: true
-    password:
-      secretName: curity-admin-password
-      key: password
+    password: "Dummy"
     uiEnabled: true
+    environmentVariableSecrets:
+      - curity-admin-password
   admin:
     service:
       type: ClusterIP
