@@ -1,6 +1,6 @@
 curity:
-  adminUIHttp: true
-  adminUIPort: 6749
+  adminUiHttp: true
+  adminUiPort: 6749
   config:
     license: true
     password: "Dummy"
