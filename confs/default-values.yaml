@@ -1,0 +1,303 @@
+# Default values for curity.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+revisionHistoryLimit: 10
+
+# Additional annotations of the ServiceAccount.
+serviceAccountAnnotations: {}
+
+image:
+  repository: curity.azurecr.io/curity/idsvr
+  tag: 10.7
+  pullPolicy: IfNotPresent
+  pullSecret:
+
+nameOverride: ""
+fullnameOverride: ""
+labels: {}
+networkpolicy:
+  enabled: true
+  apigatewayNamespace: default
+
+curity:
+  healthCheckPort: 4465
+  adminUiPort: 6749
+  adminUiHttp: false
+  jobsAnnotations: {}
+
+  admin:
+    role: admin
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    securityContext:
+      runAsUser: 10001
+      runAsGroup: 10000
+      fsGroup: 10000
+    initContainers: []
+    extraVolumes: []
+    extraVolumeMounts: []
+    distributedService:
+      port: 6790
+    service:
+      type: ClusterIP
+      port: 6789
+      annotations: {}
+    serviceAccount:
+      name:
+    livenessProbe:
+      path: /
+      timeoutSeconds: 1
+      failureThreshold: 3
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    readinessProbe:
+      path: /
+      timeoutSeconds: 1
+      failureThreshold: 3
+      successThreshold: 3
+      periodSeconds: 10
+      initialDelaySeconds: 30
+# extraEnv provides additional environment variables
+#    extraEnv:
+#      - name: SOME_EXTRA_VARIABLE
+#        value: "extra-variable-value"
+#      - name: SOME_OTHER_EXTRA_VARIABLE_USING_VALUE_FROM
+#        valueFrom:
+#          fieldRef:
+#            fieldPath: status.hostIP
+    extraEnv: []
+
+    logging:
+      level: INFO
+      image: "busybox:latest"
+      stdout: false
+      logs: []
+#        - audit
+#        - request
+#        - cluster
+#        - confsvc
+#        - confsvc-internal
+#        - post-commit-scripts
+    resources: {}
+
+  runtime:
+    role: default
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    securityContext:
+      runAsUser: 10001
+      runAsGroup: 10000
+      fsGroup: 10000
+    initContainers: []
+    extraVolumes: []
+    extraVolumeMounts: []
+    service:
+      type: ClusterIP
+      port: 8443
+      annotations: {}
+    serviceAccount:
+      name:
+    podDisruptionBudget:
+      minAvailable:
+      maxUnavailable:
+    deployment:
+      port: 8443
+    livenessProbe:
+      path: /
+      timeoutSeconds: 1
+      failureThreshold: 3
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    readinessProbe:
+      path: /
+      timeoutSeconds: 1
+      failureThreshold: 3
+      successThreshold: 3
+      periodSeconds: 10
+      initialDelaySeconds: 30
+# Ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+#     lifecycle:
+#       preStop:
+#         exec:
+#           command:
+#             - /bin/sh
+#             - -c
+#             - "sleep 30"
+# Sets the termination grace period for pods spawned by the Kubernetes Deployment.
+# Ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#hook-handler-execution
+    terminationGracePeriodSeconds: 30
+# Affinity for pod assignment
+# Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+#    affinity: {}
+
+# Topology spread constraints for pod assignment (requires Kubernetes >= 1.19)
+# Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+#    topologySpreadConstraints: []
+# extraEnv provides additional environment variables
+#    extraEnv:
+#      - name: SOME_EXTRA_VARIABLE
+#        value: "extra-variable-value"
+#      - name: SOME_OTHER_EXTRA_VARIABLE_USING_VALUE_FROM
+#        valueFrom:
+#          fieldRef:
+#            fieldPath: status.hostIP
+    extraEnv: []
+    logging:
+      level: INFO
+      image: "busybox:latest"
+      stdout: false
+      logs: []
+#        - audit
+#        - request
+#        - cluster
+#        - confsvc
+#        - confsvc-internal
+#        - post-commit-scripts
+      resources: {}
+
+  clusterConfJob:
+    resources: {}
+    securityContext: {}
+
+  convertKeystoreConfJob:
+    resources: {}
+    securityContext: {}
+
+  config:
+    uiEnabled: false
+    backup: false
+    password:
+    skipInstall: false
+    persistentConfigVolume:
+      enabled: false
+      storageClass: "default"
+      existingClaim: ""
+      accessMode: ReadWriteOnce
+      size: 800Mi
+    encryptionKey:
+    environmentVariableSecrets: []
+    environmentVariableConfigMaps: []
+    postCommitScripts: []
+# WARNING: Adding "custom postCommit script" in the post-commit-scripts can break the admin UI, if this work takes a meaningful amount of time (more than 10 or 15 seconds)
+      # - name: custom-script-name
+      #   script: |
+      #       #!/bin/bash
+      #       echo "Custom Script"
+
+    configuration: []
+#      - configMapRef:
+#          name: cfg-configmap-name
+#          items:
+#            - key: item-1
+#              path: item-1.xml
+#            - key: item-2
+#              path: item-2.xml
+#      - secretRef:
+#          name: cfg-secret
+#          items:
+#            - key: scrt-1
+#              path: scrt-1.xml
+#            - key: scrt-2
+#              path: scrt-2.xml
+#     - secretRef:
+#         name: cfg-secret-2
+#         items:
+#           - key: cfg
+#             path: configuration.xml
+
+    convertKeystore: []
+#      - sourceTls:
+#          keyName: SSL_SERVER_KEY
+#          fromSecretRef: curity-local-tls
+#          cert: SSL_SERVER_CERT # optional
+#          inAlias: curity
+#          keystorePasswordSecretRef:
+#            name: curity-idsvr-secret
+#            key: KEYSTORE_PASSWORD
+
+
+ingress:
+  annotations: {}
+#     kubernetes.io/ingress.class: nginx
+#     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#     kubernetes.io/tls-acme: "true"
+  ingressClassName:
+  runtime:
+    enabled: false
+    tlsEnabled: false
+    tlsHost:
+    host: curity.local
+    annotations: {}
+    secretName:
+    paths:
+      - /
+    pathType: ImplementationSpecific
+
+  admin:
+    enabled: false
+    tlsEnabled: false
+    tlsHost:
+    host: curity-admin.local
+    annotations: {}
+    secretName:
+    paths:
+      - /
+    pathType: ImplementationSpecific
+
+logging:
+  resources: {}
+
+resources: {}
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+#   limits:
+#     cpu: 100m
+#     memory: 128Mi
+#   requests:
+#     cpu: 100m
+#     memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+  customMetrics: []
+#    - type: External
+#      external:
+#        metric:
+#          name: idsvr_http_server_request_rate
+#        target:
+#          type: Value
+#          value: 100m
+
+postHook:
+  enabled: false
+  annotations: {}
+  image: curlimages/curl:latest
+  args: []
+#    - -ec
+#    - curl -X POST --data-urlencode 'payload={"username":"HelmRelease","text":"`$(APP_NAME)`, version `$(APP_VERSION)` (`$(CHART_NAME)` ) in `$(RELEASE_NAMESPACE)` has been deployed"}' "$(SLACK_WEBHOOK_URL)"
+  extraEnv: []
+#    - name: SLACK_WEBHOOK_URL
+#      valueFrom:
+#        secretKeyRef:
+#          key: SLACK_WEBHOOK_URL
+#          name: curity-idsvr-secret
+
+  resources: {}
+  securityContext: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: { }
+
