@@ -26,13 +26,22 @@ ingress:
     ingressClassName: nginx
     host: curity-admin.local
     paths:
-      - /
-    pathType: ImplementationSpecific
-    
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: curity-dev-idsvr-admin-svc
+            port:
+              number: 6749
   runtime:
     enabled: true
     ingressClassName: nginx
     host: curity.local
     paths:
-      - /
-    pathType: ImplementationSpecific
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: curity-dev-idsvr-runtime-svc
+            port:
+              number: 8443
