@@ -7,6 +7,12 @@ curity:
     uiEnabled: true
     environmentVariableSecrets:
       - curity-admin-password
+    configuration: 
+      - secretRef:
+          name: curity-config-secret
+          items:
+            - key: configuration.xml
+              path: configuration.xml
   admin:
     service:
       type: ClusterIP
