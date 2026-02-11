@@ -13,7 +13,7 @@ spec:
       ref: my-config-repo
     - repoURL: 'https://curityio.github.io/idsvr-helm/'
       targetRevision: HEAD
-      chart: curity/idsrv
+      chart: idsvr
       helm:
         valueFiles:
           - '$my-config-repo/confs/dev/values.yaml'
