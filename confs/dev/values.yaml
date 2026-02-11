@@ -1,24 +1,20 @@
 curity:
-  license:
-    accept: true
-    secretName: curity-license
-
-  admin:
-    logging:
-      level: INFO 
+  config:
+    license: true
     password:
       secretName: curity-admin-password
       key: password
-
-  adminService:
-    type: ClusterIP
-    ports:
-      admin: 6749
-
-  runtimeService:
-    type: ClusterIP
-    ports:
-      http: 8443
-
+    uiEnabled: true
+  admin:
+    service:
+      type: ClusterIP
+      port: 6749
+  runtime:
+    service:
+      type: ClusterIP
+      port: 8443
 ingress:
-  enabled: false 
+  runtime:
+    enabled: false 
+  admin:
+    enabled: false
