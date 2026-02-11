@@ -8,7 +8,6 @@ curity:
   admin:
     service:
       type: ClusterIP
-      port: 6749
   runtime:
     service:
       type: ClusterIP
