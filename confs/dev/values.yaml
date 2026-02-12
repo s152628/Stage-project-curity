@@ -20,6 +20,7 @@ curity:
       type: ClusterIP
       port: 8443
 ingress:
+  enabled: false
   admin:
     enabled: true
     ingressClassName: nginx
@@ -38,6 +39,9 @@ ingress:
   runtime:
     enabled: true
     ingressClassName: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
     host: curity.local
     paths:
       - path: /
