@@ -2,18 +2,15 @@ curity:
   adminUiHttp: true
   config:
     license: true
-    password: "Dummy"
     uiEnabled: true
-    environmentVariableSecrets:
-      - curity-admin-password
     configuration: 
       - secretRef:
           name: curity-config-secret
           items:
             - key: configuration.xml
               path: configuration.xml
-            - key: startup.properties
-              path: startup.properties
+    environmentVariableSecrets:
+     - curity-vars
   admin:
     service:
       type: ClusterIP
