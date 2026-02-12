@@ -1,5 +1,6 @@
 curity:
   config:
+    license: true
     uiEnabled: true
     configuration: 
       - secretRef:
@@ -28,19 +29,11 @@ ingress:
     host: dev.curity-admin.local
     paths:
       - /
-    tls:
-      - hosts:
-          - dev.curity-admin.local
-        secretName: curity-admin-tls-secret
   runtime:
     enabled: true
     annotations:
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
       kubernetes.io/ingress.class: "nginx"
     host: dev.curity.local
     paths:
       - /
-    tls:
-      - hosts:
-          - dev.curity.local
-        secretName: curity-runtime-tls-secret
