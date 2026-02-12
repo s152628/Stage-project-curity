@@ -12,6 +12,8 @@ curity:
           items:
             - key: configuration.xml
               path: configuration.xml
+            - key: startup.properties
+              path: startup.properties
   admin:
     service:
       type: ClusterIP
