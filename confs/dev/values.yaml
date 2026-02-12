@@ -29,13 +29,7 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
     host: curity-admin.local
     paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: curity-dev-idsvr-admin-svc
-            port:
-              number: 6749
+      - /
   runtime:
     enabled: true
     ingressClassName: nginx
@@ -44,10 +38,4 @@ ingress:
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
     host: curity.local
     paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: curity-dev-idsvr-runtime-svc
-            port:
-              number: 8443
+      - /
