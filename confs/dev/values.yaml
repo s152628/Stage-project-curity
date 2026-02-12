@@ -27,6 +27,7 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+      kubernetes.io/ingress.class: "nginx"
     host: curity-admin.local
     paths:
       - /
@@ -35,6 +36,7 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+      kubernetes.io/ingress.class: "nginx"
     host: curity.local
     paths:
       - /
