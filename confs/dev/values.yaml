@@ -30,6 +30,17 @@ ingress:
     paths:
       - /
   runtime:
+    replicaCount: 3
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                    - curity-runtime
+            topologyKey: "kubernetes.io/hostname"
     enabled: true
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
