@@ -15,7 +15,7 @@ jobs:
         run: |
           helm repo add curity https://curityio.github.io/idsvr-helm/
           helm repo update
-          helm lint charts/my-release --values confs/dev/values.yaml
+          helm template my-release curity/idsvr --values confs/dev/values.yaml > /dev/null
 
       # Stap 3: Check de Argo CD YAMLs
       - name: Validate Argo Manifests
