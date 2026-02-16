@@ -1,0 +1,23 @@
+name: CI for Values and TestApp
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Stap 1: Test de Values tegen de officiële Curity chart
+      - name: Helm Lint
+        run: |
+          helm repo add curity https://curityio.github.io/idsvr-helm/
+          helm repo update
+          helm lint charts/my-release --values confs/dev/values.yaml
+
+      # Stap 3: Check de Argo CD YAMLs
+      - name: Validate Argo Manifests
+        run: |
+          python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" apps/*.yaml
