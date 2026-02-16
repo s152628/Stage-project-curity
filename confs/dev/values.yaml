@@ -5,6 +5,8 @@ curity:
     cluster:
       enabled: true
       masterHost: "curity-dev-idsvr-admin-svc"
+      existingSecret: "curity-cluster-secret"
+      secretPasswordKey: "password"
     uiEnabled: true
     configuration: 
       - secretRef:
