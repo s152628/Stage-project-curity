@@ -12,9 +12,7 @@ curity:
             - key: configuration.xml
               path: configuration.xml
     environmentVariableSecrets:
-     - name: "PASSWORD"
-       secretName: "curity-cluster-secret"
-       secretKey: "password"
+     - curity-cluster-secret
      - curity-vars
   admin:
     service:
@@ -23,6 +21,9 @@ curity:
     service:
       type: ClusterIP
       port: 8443
+    extraEnv:
+    - name: "ADMIN_SERVICE_NAME"
+      value: "curity-dev-idsvr-admin-svc"
 ingress:
   enabled: false
   admin:
@@ -36,9 +37,6 @@ ingress:
     paths:
       - /
   runtime:
-    extraEnv:
-      - name: "ADMIN_SERVICE_NAME"
-        value: "curity-dev-idsvr-admin-svc"
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -51,7 +49,7 @@ ingress:
             topologyKey: "kubernetes.io/hostname"
     enabled: true
     annotations:
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       kubernetes.io/ingress.class: "nginx"
     host: dev.curity.local
     paths:
