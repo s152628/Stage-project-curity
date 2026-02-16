@@ -13,7 +13,7 @@ curity:
               path: configuration.xml
     environmentVariableSecrets:
      - name: "PASSWORD"
-       secretName: "ccurityc-cluster-secret"
+       secretName: "curity-cluster-secret"
        secretKey: "password"
      - curity-vars
   admin:
