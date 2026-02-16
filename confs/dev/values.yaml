@@ -2,6 +2,9 @@ replicaCount: 3
 curity:
   config:
     license: true
+    cluster:
+      enabled: true
+      masterHost: "curity-dev-idsvr-admin-svc"
     uiEnabled: true
     configuration: 
       - secretRef:
