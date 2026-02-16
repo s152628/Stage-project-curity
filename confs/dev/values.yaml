@@ -4,9 +4,6 @@ curity:
     license: true
     cluster:
       enabled: true
-      masterHost: "curity-dev-idsvr-admin-svc"
-      existingSecret: "curity-cluster-secret"
-      secretPasswordKey: "password"
     uiEnabled: true
     configuration: 
       - secretRef:
@@ -15,6 +12,9 @@ curity:
             - key: configuration.xml
               path: configuration.xml
     environmentVariableSecrets:
+     - name: "PASSWORD"
+       secretName: "ccurityc-cluster-secret"
+       secretKey: "password"
      - curity-vars
   admin:
     service:
@@ -36,6 +36,9 @@ ingress:
     paths:
       - /
   runtime:
+    extraEnv:
+      - name: "ADMIN_SERVICE_NAME"
+        value: "curity-dev-idsvr-admin-svc"
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
