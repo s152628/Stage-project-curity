@@ -9,16 +9,36 @@ on:
 jobs:
   validate-and-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Helm Lint
         run: |
           helm repo add curity https://curityio.github.io/idsvr-helm/
           helm repo update
           helm template my-release curity/idsvr --values confs/dev/values.yaml > /dev/null
+          helm template my-release curity/idsvr --values confs/acc/values.yaml > /dev/null
+          helm template my-release curity/idsvr --values confs/prod/values.yaml > /dev/null
 
 
       - name: Validate Argo Manifests
         run: |
           python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" apps/*.yaml
+      
+      - name: Create PR and Enable Auto-Merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr_url=$(gh pr create \
+            --base main \
+            --head develop \
+            --title "🚀 Auto-promotion: develop to main" \
+            --body "Deze PR is automatisch aangemaakt door de CI pipeline na succesvolle validatie.")
+          
+          echo "PR aangemaakt: $pr_url"
+          gh pr merge "$pr_url" --auto --merge
