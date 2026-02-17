@@ -8,7 +8,7 @@ app.secret_key = os.urandom(24)
 oauth = OAuth(app)
 oauth.register(
     name='curity',
-    client_kwargs={'scope': 'openid profile',
+    client_kwargs={'scope': 'openid',
                    'verify': False},
     client_id=os.getenv('CLIENT_ID'),
     client_secret=os.getenv('CLIENT_SECRET'),
