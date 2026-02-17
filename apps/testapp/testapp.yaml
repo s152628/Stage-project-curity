@@ -20,8 +20,18 @@ spec:
         ports:
         - containerPort: 5000
         env:
-        - name: CURITY_URL
-          value: "https://dev.curity.local"
+        - name: CURITY_BASE_URL
+          value: "https://dev.curity.local/oauth/v2/oauth-anonymous"
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: test-app-secrets
+              key: CLIENT_ID
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: test-app-secrets
+              key: CLIENT_SECRET
 ---
 apiVersion: v1
 kind: Service
