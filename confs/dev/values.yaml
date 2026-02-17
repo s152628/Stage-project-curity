@@ -21,9 +21,6 @@ curity:
     service:
       type: ClusterIP
       port: 8443
-    extraEnv:
-    - name: "ADMIN_SERVICE_NAME"
-      value: "curity-dev-idsvr-admin-svc"
 ingress:
   enabled: false
   admin:
@@ -34,7 +31,6 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
-      kubernetes.io/ingress.class: "nginx"
     host: dev.curity-admin.local
     paths:
       - /
@@ -52,9 +48,9 @@ ingress:
     enabled: true
     tls: true
     secretName: curity-tls-secret
+    ingressClassName: nginx
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-      kubernetes.io/ingress.class: "nginx"
     host: dev.curity.local
     paths:
       - /
