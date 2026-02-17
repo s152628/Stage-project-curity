@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: curity-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: 'https://github.com/s152628/Stage-project-curity.git'
+      targetRevision: HEAD
+      ref: my-config-repo
+    - repoURL: 'https://curityio.github.io/idsvr-helm/'
+      targetRevision: '0.13.17'
+      chart: idsvr
+      helm:
+        valueFiles:
+          - '$my-config-repo/confs/prod/values.yaml'
+
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: curity
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
