@@ -37,7 +37,7 @@ jobs:
           pr_url=$(gh pr create \
             --base main \
             --head develop \
-            --title "🚀 Auto-promotion: develop to main" \
+            --title "Auto-promotion: develop to main" \
             --body "Deze PR is automatisch aangemaakt door de CI pipeline na succesvolle validatie.")
           
           echo "PR aangemaakt: $pr_url"
