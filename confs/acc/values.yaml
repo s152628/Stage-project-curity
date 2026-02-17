@@ -1,0 +1,56 @@
+replicaCount: 3
+curity:
+  config:
+    license: true
+    cluster:
+      enabled: true
+    uiEnabled: true
+    configuration: 
+      - secretRef:
+          name: curity-config-secret
+          items:
+            - key: configuration.xml
+              path: configuration.xml
+    environmentVariableSecrets:
+     - curity-cluster-secret
+     - curity-vars
+  admin:
+    service:
+      type: ClusterIP
+  runtime:
+    service:
+      type: ClusterIP
+      port: 8443
+ingress:
+  enabled: false
+  admin:
+    enabled: true
+    tls: true
+    secretName: curity-tls-secret
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+      kubernetes.io/ingress.class: "nginx"
+    host: acc.curity-admin.local
+    paths:
+      - /
+  runtime:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                    - curity-runtime
+            topologyKey: "kubernetes.io/hostname"
+    enabled: true
+    tls: true
+    secretName: curity-tls-secret
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      kubernetes.io/ingress.class: "nginx"
+    host: acc.curity.local
+    paths:
+      - /
