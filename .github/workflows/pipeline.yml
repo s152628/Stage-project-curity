@@ -1,4 +1,4 @@
-name: CI for Values and TestApp
+name: CI for Values
 
 on:
   push:
@@ -12,14 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Stap 1: Test de Values tegen de officiële Curity chart
       - name: Helm Lint
         run: |
           helm repo add curity https://curityio.github.io/idsvr-helm/
           helm repo update
           helm template my-release curity/idsvr --values confs/dev/values.yaml > /dev/null
 
-      # Stap 3: Check de Argo CD YAMLs
+
       - name: Validate Argo Manifests
         run: |
           python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" apps/*.yaml
