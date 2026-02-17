@@ -29,11 +29,15 @@ jobs:
         run: |
           python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" apps/*.yaml
       
-      - name: Merge develop to main
-        if: success() && github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      - name: Create PR and Enable Auto-Merge
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout main
-          git merge origin/develop --no-ff -m "Merge develop into main [skip ci]"
-          git push origin main
+          pr_url=$(gh pr create \
+            --base main \
+            --head develop \
+            --title "🚀 Auto-promotion: develop to main" \
+            --body "Deze PR is automatisch aangemaakt door de CI pipeline na succesvolle validatie.")
+          
+          echo "PR aangemaakt: $pr_url"
+          gh pr merge "$pr_url" --auto --merge
