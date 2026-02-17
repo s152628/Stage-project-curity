@@ -34,11 +34,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          pr_url=$(gh pr create \
-            --base main \
-            --head develop \
-            --title "Auto-promotion: develop to main" \
-            --body "Deze PR is automatisch aangemaakt door de CI pipeline na succesvolle validatie.")
-          
-          echo "PR aangemaakt: $pr_url"
-          gh pr merge "$pr_url" --auto --merge
+          PR_EXISTS=$(gh pr list --base main --head develop --state open --json number -q '.[0].number')
+            
+            if [ -z "$PR_EXISTS" ]; then
+              echo "Geen openstaande PR gevonden, nieuwe aanmaken..."
+              pr_url=$(gh pr create \
+                --base main \
+                --head develop \
+                --title "Auto-promotion: develop to main" \
+                --body "Automatische update van de Curity configuratie.")
+            else
+              echo "Er bestaat al een PR (#$PR_EXISTS). We gebruiken die."
+              pr_url="https://github.com/${{ github.repository }}/pull/$PR_EXISTS"
+            fi
+            
+            echo "PR URL: $pr_url"
+            gh pr merge "$pr_url" --auto --merge
