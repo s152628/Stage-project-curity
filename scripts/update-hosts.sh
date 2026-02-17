@@ -1,13 +1,17 @@
 #!/bin/bash
 
 # --- CONFIGURATIE ---
-ENVIRONMENTS=("dev" "acc" "prod")
-NAMESPACE="curity" 
+ENVIRONMENTS=("dev" "acc" "prod") 
 
 echo "IP-adressen ophalen uit Kubernetes..."
 
 get_ip() {
     local env=$1
+    local NAMESPACE="curity-$env"
+    if ! kubectl get ingress -n "$NAMESPACE" -l "app.kubernetes.io/instance=curity-$env" &> /dev/null; then
+        echo ""
+        return
+    fi
     local ip=$(kubectl get ingress -n "$NAMESPACE" -l "app.kubernetes.io/instance=curity-$env" -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null)
     if [ -z "$ip" ] || [ "$ip" == "localhost" ]; then
         ip="127.0.0.1"

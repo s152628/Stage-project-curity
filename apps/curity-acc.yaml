@@ -20,7 +20,7 @@ spec:
 
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: curity
+    namespace: curity-acc
 
   syncPolicy:
     automated:
