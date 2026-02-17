@@ -15,6 +15,7 @@ oauth.register(
     client_id=os.getenv('CLIENT_ID'),
     client_secret=os.getenv('CLIENT_SECRET'),
     server_metadata_url=f"{os.getenv('CURITY_BASE_URL')}/.well-known/openid-configuration",
+    token_endpoint=f"{os.getenv('CURITY_BASE_URL')}/oauth/v2/oauth-token"
 )
 
 @app.route('/')
