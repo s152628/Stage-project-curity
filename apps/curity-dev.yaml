@@ -12,7 +12,7 @@ spec:
       targetRevision: HEAD
       ref: my-config-repo
     - repoURL: 'https://curityio.github.io/idsvr-helm/'
-      targetRevision: '0.13.17'
+      targetRevision: '0.13.18'
       chart: idsvr
       helm:
         valueFiles:
