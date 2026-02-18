@@ -58,6 +58,6 @@ ingress:
       nginx.ingress.kubernetes.io/affinity: "cookie"
       nginx.ingress.kubernetes.io/session-cookie-name: "route"
       nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
-    host: dev.curity.local
+    host: auth.camazotz.me
     paths:
       - /
