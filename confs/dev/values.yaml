@@ -14,8 +14,6 @@ curity:
     environmentVariableSecrets:
      - curity-cluster-secret
      - curity-vars
-    jdbcDrivers:
-      - https://jdbc.postgresql.org/download/postgresql-42.6.0.jar
   admin:
     service:
       type: ClusterIP
