@@ -14,9 +14,9 @@ spec:
     - repoURL: 'https://curityio.github.io/idsvr-helm/'
       targetRevision: '0.13.18'
       chart: idsvr
-      # helm:
-        # valueFiles:
-        #   - '$my-config-repo/confs/dev/values.yaml'
+      helm:
+        valueFiles:
+          - '$my-config-repo/confs/dev/values.yaml'
 
   destination:
     server: 'https://kubernetes.default.svc'
