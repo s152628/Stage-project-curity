@@ -34,7 +34,7 @@ spec:
           mountPath: /var/lib/tailscale
       - name: bridge
         image: alpine/socat
-        command: ["socat", "TCP-LISTEN:8443,fork,reuseaddr", "TCP:nginx-ingress-ingress-nginx-controller:443"]
+        command: ["socat", "TCP-LISTEN:8443,fork,reuseaddr", "TCP:nginx-ingress-ingress-nginx-controller.ingress-nginx.svc.cluster.local:443"]
       volumes:
       - name: ts-state
         emptyDir: {}
