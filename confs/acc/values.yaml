@@ -21,6 +21,10 @@ curity:
     service:
       type: ClusterIP
       port: 8443
+      sessionAffinity: ClientIP
+      sessionAffinityConfig:
+        clientIP:
+          timeoutSeconds: 10800
 ingress:
   enabled: false
   admin:
