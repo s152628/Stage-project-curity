@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale-sa
+  namespace: curity-dev
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tailscale-role
+  namespace: curity-dev
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tailscale-rolebinding
+  namespace: curity-dev
+subjects:
+  - kind: ServiceAccount
+    name: tailscale-sa
+    namespace: curity-dev
+roleRef:
+  kind: Role
+  name: tailscale-role
+  apiGroup: rbac.authorization.k8s.io
