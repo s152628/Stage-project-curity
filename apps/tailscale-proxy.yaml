@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-bridge
+  namespace: curity-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tailscale-bridge
+  template:
+    metadata:
+      labels:
+        app: tailscale-bridge
+    spec:
+      serviceAccountName: tailscale-sa
+      containers:
+      - name: tailscale
+        image: tailscale/tailscale:latest
+        env:
+        - name: TS_AUTHKEY
+          valueFrom:
+            secretKeyRef:
+              name: tailscale-auth 
+              key: TS_AUTHKEY     
+        - name: TS_EXTRA_ARGS
+          value: "--hostname=curity-k8s-tunnel"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        volumeMounts:
+        - name: ts-state
+          mountPath: /var/lib/tailscale
+      - name: bridge
+        image: alpine/socat
+        command: ["socat", "TCP-LISTEN:8443,fork,reuseaddr", "TCP:curity-dev-idsvr-runtime-svc:8443"]
+      volumes:
+      - name: ts-state
+        emptyDir: {}
