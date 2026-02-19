@@ -31,7 +31,7 @@ ingress:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
       kubernetes.io/ingress.class: "nginx"
-    host: dev.curity-admin.local
+    host: auth-admin.camazotz.me
     paths:
       - /
   runtime:
