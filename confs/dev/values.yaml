@@ -1,9 +1,9 @@
-replicaCount: 3
+replicaCount: 1
 curity:
   config:
     license: true
     cluster:
-      enabled: true
+      enabled: false
     uiEnabled: true
     configuration: 
       - secretRef:
