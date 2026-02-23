@@ -18,6 +18,13 @@ curity:
     service:
       type: ClusterIP
   runtime:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
     service:
       type: ClusterIP
       port: 8443
