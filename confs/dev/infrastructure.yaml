@@ -1,12 +1,3 @@
-# --- CONFIGMAP VOOR DATABASE INIT ---
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-configMapGenerator:
-- name: curity-db-init-sql
-  files:
-    - postgres-create_database.sql
----
 # --- CLOUDNATIVEPG DATABASE CLUSTER ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
