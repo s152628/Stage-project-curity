@@ -11,22 +11,18 @@ spec:
     - repoURL: 'https://cloudnative-pg.github.io/charts'
       chart: cloundnative-pg
       targetRevision: '0.27.1'
-      
+
     - repoURL: 'https://github.com/s152628/Stage-project-curity.git'
       targetRevision: HEAD
       path: 'confs/dev'
+      ref: my-config
     
     - repoURL: 'https://curityio.github.io/idsvr-helm/'
       targetRevision: '0.13.18'
       chart: idsvr
       helm:
         valueFiles:
-          - '$values/confs/dev/values.yaml'
-  
-  sourceNames:
-    - operator
-    - infra
-    - values
+          - '$my-config/confs/dev/values.yaml'
 
   destination:
     server: 'https://kubernetes.default.svc'

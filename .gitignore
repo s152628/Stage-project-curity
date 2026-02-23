@@ -1,3 +1,4 @@
 .secrets/
 confs/vault/
 confs/dev/database/postgres-create_database.sql
+confs/dev/postgres-create_database.sql
