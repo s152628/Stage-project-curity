@@ -11,7 +11,8 @@ for ENV in "${ENVIRONMENTS[@]}"; do
 
     echo "---------------------------------------------------"
     if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
-        echo "⏭Namespace $NAMESPACE bestaat niet. Deze omgeving wordt overgeslagen."
+        echo "⏭Namespace $NAMESPACE wordt aangemaakt."
+        kubectl create namespace "$NAMESPACE"
         continue
     fi
 
@@ -21,12 +22,20 @@ for ENV in "${ENVIRONMENTS[@]}"; do
     TLS_KEY_VAR="${U_ENV}_TLS_KEY_PATH"
     TLS_CRT_VAR="${U_ENV}_TLS_CRT_PATH"
     CLUSTER_PW_VAR="${U_ENV}_CLUSTER_PASSWORD"
+    DB_PW_VAR="${U_ENV}_DB_PASSWORD"
+    DB_USER_VAR="${U_ENV}_DB_USER"
+    TAILSCALE_AUTH_KEY_VAR="${U_ENV}_TAILSCALE_AUTH_KEY"
+    DB_SQL_VAR="${U_ENV}_DB_SQL_PATH"
 
     ENV_FILE="${!ENV_FILE_VAR}"
     XML_FILE="${!XML_FILE_VAR}"
     TLS_KEY="${!TLS_KEY_VAR}"
     TLS_CRT="${!TLS_CRT_VAR}"
     CLUSTER_PW="${!CLUSTER_PW_VAR}"
+    DB_PW="${!DB_PW_VAR}"
+    DB_USER="${!DB_USER_VAR}"
+    TAILSCALE_AUTH_KEY="${!TAILSCALE_AUTH_KEY_VAR}"
+    DB_SQL="${!DB_SQL_VAR}"
 
     # --- UITVOERING ---
     echo "Bootstrapping secrets voor: $ENV"
@@ -49,7 +58,27 @@ for ENV in "${ENVIRONMENTS[@]}"; do
     else
         echo "FOUT: XML config voor $ENV niet gevonden."
     fi
-
+    if [ ! -z "$DB_USER" ] && [ ! -z "$DB_PW" ]; then
+        kubectl create secret generic db-user-creds \
+        --from-literal=username="$DB_USER" \
+        --from-literal=password="$DB_PW" \
+        -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+        echo "Secret 'db-user-creds' bijgewerkt."
+    else
+         echo "FOUT: Database user of password niet ingesteld."
+    fi
+    if [ -f "$DB_SQL" ]; then
+        kubectl create configmap curity-db-init-sql \
+        --from-file="$DB_SQL" \
+        -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+        echo "ConfigMap 'curity-db-init-sql' bijgewerkt."
+    fi
+    if [ ! -z "$TAILSCALE_AUTH_KEY" ]; then
+        kubectl create secret generic tailscale-auth \
+        --from-literal=TS_AUTHKEY="$TAILSCALE_AUTH_KEY" \
+        -n "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+        echo "Secret 'tailscale-auth' bijgewerkt."
+    fi
     if [ ! -z "$CLUSTER_PW" ]; then
         kubectl create secret generic curity-cluster-secret \
         --from-literal=PASSWORD="$CLUSTER_PW" \

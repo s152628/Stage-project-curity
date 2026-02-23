@@ -17,6 +17,15 @@ curity:
   admin:
     service:
       type: ClusterIP
+    livenessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 20
+      timeoutSeconds: 15
+      failureThreshold: 10
+    readinessProbe:
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 10
   runtime:
     service:
       type: ClusterIP
