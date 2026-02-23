@@ -17,6 +17,13 @@ curity:
   admin:
     service:
       type: ClusterIP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
   runtime:
     resources:
       limits:
