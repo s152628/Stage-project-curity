@@ -13,6 +13,8 @@ kind: Cluster
 metadata:
   name: curity-db-ha
   namespace: curity-dev
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   instances: 3
   storage:
@@ -70,6 +72,8 @@ kind: Deployment
 metadata:
   name: tailscale-bridge
   namespace: curity-dev
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   replicas: 1
   selector:
