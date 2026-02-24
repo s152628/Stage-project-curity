@@ -3,7 +3,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: curity-db-ha
-  namespace: curity-dev
+  namespace: curity-prod
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
@@ -27,13 +27,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: tailscale-sa
-  namespace: curity-dev
+  namespace: curity-prod
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: tailscale-role
-  namespace: curity-dev
+  namespace: curity-prod
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -46,11 +46,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tailscale-rolebinding
-  namespace: curity-dev
+  namespace: curity-prod
 subjects:
   - kind: ServiceAccount
     name: tailscale-sa
-    namespace: curity-dev
+    namespace: curity-prod
 roleRef:
   kind: Role
   name: tailscale-role
@@ -62,7 +62,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tailscale-bridge
-  namespace: curity-dev
+  namespace: curity-prod
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
@@ -86,7 +86,7 @@ spec:
               name: tailscale-auth 
               key: TS_AUTHKEY     
         - name: TS_EXTRA_ARGS
-          value: "--hostname=curity-dev-k8s-tunnel"
+          value: "--hostname=curity-k8s-tunnel"
         securityContext:
           capabilities:
             add:
