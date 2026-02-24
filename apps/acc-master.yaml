@@ -1,26 +1,32 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: curity-dev
+  name: curity-full-stack
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   sources:
+    - repoURL: 'https://cloudnative-pg.github.io/charts'
+      chart: cloudnative-pg
+      targetRevision: '0.27.1'
+
     - repoURL: 'https://github.com/s152628/Stage-project-curity.git'
       targetRevision: HEAD
-      ref: my-config-repo
+      path: 'confs/acc'
+      ref: my-config
+    
     - repoURL: 'https://curityio.github.io/idsvr-helm/'
-      targetRevision: '0.13.18'
+      targetRevision: '0.13.17'
       chart: idsvr
       helm:
         valueFiles:
-          - '$my-config-repo/confs/dev/values.yaml'
+          - '$my-config/confs/acc/values.yaml'
 
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: curity-dev
+    namespace: curity-acc
 
   syncPolicy:
     automated:
@@ -28,3 +34,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+      - replace=true

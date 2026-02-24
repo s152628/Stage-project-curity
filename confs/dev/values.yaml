@@ -20,14 +20,14 @@ curity:
     resources:
       limits:
         cpu: 500m
-        memory: 1Gi
+        memory: 2Gi
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 400m
+        memory: 1Gi
   runtime:
     resources:
       limits:
-        cpu: 1000m
+        cpu: 500m
         memory: 2Gi
       requests:
         cpu: 200m
@@ -45,7 +45,7 @@ ingress:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
       kubernetes.io/ingress.class: "nginx"
-    host: auth-admin.camazotz.me
+    host: auth-admin.dev.camazotz.me
     paths:
       - /
   runtime:
@@ -68,6 +68,6 @@ ingress:
       nginx.ingress.kubernetes.io/affinity: "cookie"
       nginx.ingress.kubernetes.io/session-cookie-name: "route"
       nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
-    host: auth.camazotz.me
+    host: auth.dev.camazotz.me
     paths:
       - / 
