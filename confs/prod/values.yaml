@@ -19,6 +19,10 @@ curity:
       initialDelaySeconds: 300
       periodSeconds: 30
       failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 30
+      failureThreshold: 3
     service:
       type: ClusterIP
     resources:
@@ -29,6 +33,14 @@ curity:
         cpu: 400m
         memory: 1Gi
   runtime:
+    livenessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 30
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 30
+      failureThreshold: 3
     resources:
       limits:
         cpu: 500m
