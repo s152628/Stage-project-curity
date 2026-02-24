@@ -15,6 +15,10 @@ curity:
      - curity-cluster-secret
      - curity-vars
   admin:
+    livenessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 30
+      failureThreshold: 3
     service:
       type: ClusterIP
     resources:
