@@ -16,11 +16,11 @@ curity:
      - curity-vars
   admin:
     livenessProbe:
-      initialDelaySeconds: 150
+      initialDelaySeconds: 90
       periodSeconds: 30
       failureThreshold: 3
     readinessProbe:
-      initialDelaySeconds: 150
+      initialDelaySeconds: 90
       periodSeconds: 30
       failureThreshold: 3
     service:
@@ -34,11 +34,11 @@ curity:
         memory: 1Gi
   runtime:
     livenessProbe:
-      initialDelaySeconds: 150
+      initialDelaySeconds: 90
       periodSeconds: 30
       failureThreshold: 3
     readinessProbe:
-      initialDelaySeconds: 150
+      initialDelaySeconds: 90
       periodSeconds: 30
       failureThreshold: 3
     resources:
