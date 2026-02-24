@@ -61,7 +61,7 @@ ingress:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
       kubernetes.io/ingress.class: "nginx"
-    host: auth-admin.acc.camazotz.me
+    host: auth-admin-acc.camazotz.me
     paths:
       - /
   runtime:
@@ -84,6 +84,6 @@ ingress:
       nginx.ingress.kubernetes.io/affinity: "cookie"
       nginx.ingress.kubernetes.io/session-cookie-name: "route"
       nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
-    host: auth.acc.camazotz.me
+    host: auth-acc-camazotz.me
     paths:
       - / 
