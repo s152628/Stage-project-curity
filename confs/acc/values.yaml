@@ -84,6 +84,6 @@ ingress:
       nginx.ingress.kubernetes.io/affinity: "cookie"
       nginx.ingress.kubernetes.io/session-cookie-name: "route"
       nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
-    host: auth-acc-camazotz.me
+    host: auth-acc.camazotz.me
     paths:
       - / 
