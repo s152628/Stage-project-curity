@@ -13,7 +13,8 @@ for ENV in "${ENVIRONMENTS[@]}"; do
     if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
         echo "⏭Namespace $NAMESPACE wordt aangemaakt."
         kubectl create namespace "$NAMESPACE"
-        continue
+        else
+        echo "⏭Namespace $NAMESPACE bestaat al, secrets worden geüpdatet."
     fi
 
     # Dynamische variabelen ophalen
