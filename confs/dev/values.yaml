@@ -63,6 +63,7 @@ ingress:
     paths:
       - /
   runtime:
+    enabled: true
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
