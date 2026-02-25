@@ -43,7 +43,7 @@ curity:
       failureThreshold: 3
     resources:
       limits:
-      cpu: 501m
+        cpu: 501m
         memory: 2Gi
       requests:
         cpu: 200m
