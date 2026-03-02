@@ -1,3 +1,7 @@
 .secrets/
 confs/vault/
 scripts/
+apps/testapplicatie/.env
+apps/testapplicatie/node_modules/
+apps/testapplicatie/package-lock.json
+apps/testapplicatie/package.json
