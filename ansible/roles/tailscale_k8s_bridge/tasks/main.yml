@@ -1,11 +1,13 @@
 - name: "Zorg dat de namespace {{ tailscale_namespace }} bestaat"
   kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
     name: "{{ tailscale_namespace }}"
     kind: Namespace
     state: present
 
 - name: "Maak het Tailscale Auth Secret aan"
   kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
     definition:
       apiVersion: v1
@@ -18,5 +20,6 @@
 
 - name: "Rol de Tailscale Bridge uit"
   kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
     definition: "{{ lookup('template', 'deployment.j2') | from_yaml }}"
