@@ -62,6 +62,45 @@
             - CreateNamespace=true
             - ServerSideApply=true
             - replace=true
+- name: "Installeer de Monitoring Stack via ArgoCD"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: kube-prometheus-stack
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          chart: kube-prometheus-stack
+          repoURL: https://prometheus-community.github.io/helm-charts
+          targetRevision: 82.4.3
+          helm:
+            values: |
+              grafana:
+                grafana.ini:
+                  server:
+                    domain: {{ grafana_link }}
+                    root_url: https://{{ grafana_link }}
+                    serve_from_sub_path: false
+                service:
+                  type: ClusterIP
+              prometheus:
+                prometheusSpec:
+                  retention: 10d
+        destination:
+          server: "https://kubernetes.default.svc"
+          namespace: monitoring
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+            - ServerSideApply=true
 
 - name: "Zorg dat Namespace curity-{{ env }} bestaat"
   kubernetes.core.k8s:
