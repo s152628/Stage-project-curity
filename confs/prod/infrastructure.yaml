@@ -120,6 +120,10 @@ spec:
       labels:
         app: auth-testapp
     spec:
+      initContainers:
+      - name: Wait-for-Curity
+        image: busybox
+        command: ['sh', '-c', "until nc -zv curity-prod-stack-idsvr-runtime-svc.curity-prod.svc.cluster.local 8443; do echo waiting for curity; sleep 2; done;"]
       containers:
       - name: testapp
         image: camazotz01/auth-testapp:latest 
