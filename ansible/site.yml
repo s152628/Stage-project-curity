@@ -9,4 +9,5 @@
     - base
     - k8s_setup
     - argocd_setup
+    - tailscale_k8s_bridge
     - deploy_env

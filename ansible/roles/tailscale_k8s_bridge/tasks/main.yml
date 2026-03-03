@@ -1,0 +1,22 @@
+- name: "Zorg dat de namespace {{ tailscale_namespace }} bestaat"
+  kubernetes.core.k8s:
+    name: "{{ tailscale_namespace }}"
+    kind: Namespace
+    state: present
+
+- name: "Maak het Tailscale Auth Secret aan"
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: tailscale-auth
+        namespace: "{{ tailscale_namespace }}"
+      stringData:
+        TS_AUTHKEY: "{{ tailscale_auth_key }}"
+
+- name: "Rol de Tailscale Bridge uit"
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.j2') | from_yaml }}"
