@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate # Belangrijk: voorkom twee nodes met dezelfde naam
+    type: Recreate
   selector:
     matchLabels:
       app: {{ tailscale_hostname }}
@@ -15,6 +15,7 @@ spec:
       labels:
         app: {{ tailscale_hostname }}
     spec:
+      serviceAccountName: tailscale-bridge-sa
       containers:
       - name: tailscale
         image: {{ tailscale_image }}
@@ -25,17 +26,20 @@ spec:
               name: tailscale-auth
               key: TS_AUTHKEY
         - name: TS_EXTRA_ARGS
-          value: "--hostname={{ tailscale_hostname }} --accept-dns=true --accept-routes=true --ephemeral"
-        - name: TS_USERSPACE
-          value: "false"
+          value: "--hostname=k8s-infra-bridge"
         securityContext:
           capabilities:
             add:
             - NET_ADMIN
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
+        volumeMounts:
+        - name: ts-state
+          mountPath: /var/lib/tailscale
+      - name: bridge
+        image: alpine/socat
+        command: ["sh", "-c", "
+         socat TCP-LISTEN:8082,fork,reuseaddr TCP:kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80 &
+         socat TCP-LISTEN:8081,fork,reuseaddr TCP:argocd-server.argocd.svc.cluster.local:443
+         "]
+      volumes:
+      - name: ts-state
+        emptyDir: {}
