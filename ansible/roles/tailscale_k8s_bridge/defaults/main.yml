@@ -1,0 +1,3 @@
+tailscale_namespace: "infra-mgmt"
+tailscale_hostname: "k8s-infra-bridge"
+tailscale_image: "tailscale/tailscale:latest"
