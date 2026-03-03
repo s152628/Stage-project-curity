@@ -1,0 +1,83 @@
+---
+- name: Zorg dat de namespace argocd bestaat
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    name: argocd
+    kind: Namespace
+    state: present
+  
+- name: Download Argo CD CLI binary
+  get_url:
+    url: https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    dest: /usr/local/bin/argocd
+    mode: '0755'
+  become: true
+  
+- name: Installeer Argo CD via kubectl (Server-Side Apply)
+  shell: |
+    kubectl apply -n argocd --server-side --force-conflicts \
+    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: argocd_install
+  changed_when: "'created' in argocd_install.stdout or 'configured' in argocd_install.stdout"
+
+- name: Genereer bcrypt hash op de server
+  shell: htpasswd -nbB admin "{{ argo_admin_password }}" | cut -d":" -f2
+  register: generated_hash
+  changed_when: false
+
+- name: Wacht tot het secret argocd-secret beschikbaar is
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: Secret
+    name: argocd-secret
+    namespace: argocd
+  register: main_secret_check
+  until: main_secret_check.resources | length > 0
+  retries: 12
+  delay: 10
+
+- name: Update argocd-secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: patched
+    kind: Secret
+    name: argocd-secret
+    namespace: argocd
+    definition:
+      stringData:
+        admin.password: "{{ generated_hash.stdout | trim }}"
+        admin.passwordMtime: "{{ ansible_facts['date_time']['iso8601'] }}"
+  register: password_update
+
+- name: Forceer Argo CD om de nieuwe secret in te laden
+  shell: kubectl rollout restart deployment argocd-server -n argocd
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  when: password_update.changed
+
+- name: Verwijder de oude initial-admin-secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: absent
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: argocd
+
+- name: Registreer GitHub Deploy Key in Argo CD
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: github-repo-secret
+        namespace: argocd
+        labels:
+          argocd.argoproj.io/secret-type: repository
+      stringData:
+        type: git
+        url: "https://github.com/s152628/Stage-project-curity.git"
+        

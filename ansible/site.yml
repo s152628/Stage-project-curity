@@ -1,0 +1,12 @@
+---
+- name: Bootstap Curity VM
+  hosts: test_server
+  pre_tasks:
+    - name: Laad variabelen uit group_vars/{{ env }}.yml
+      include_vars:
+        file: "inventory/group_vars/{{ env }}.yml"
+  roles:
+    - base
+    - k8s_setup
+    - argocd_setup
+    - deploy_env

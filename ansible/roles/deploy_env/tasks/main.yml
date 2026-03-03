@@ -1,0 +1,185 @@
+---
+- name: Rol de Nginx Ingress Controller uit via Argo CD
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: nginx-ingress
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          chart: ingress-nginx
+          repoURL: https://kubernetes.github.io/ingress-nginx
+          targetRevision: 4.1.1
+          helm:
+            values: |
+              controller:
+                kind: DaemonSet
+                hostNetwork: true
+                dnsPolicy: ClusterFirstWithHostNet
+                service:
+                  type: ClusterIP
+                publishService:
+                  enabled: false
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: ingress-nginx
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+
+- name: Rol de CloudNativePG Operator uit via Argo CD
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: cloudnative-pg-operator
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          repoURL: https://cloudnative-pg.github.io/charts
+          targetRevision: '0.27.1'
+          chart: cloudnative-pg
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: cloudnative-pg
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+            - ServerSideApply=true
+            - replace=true
+
+- name: "Zorg dat Namespace curity-{{ env }} bestaat"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    name: "curity-{{ env }}"
+    kind: Namespace
+    state: present
+
+- name: "Lees en parse {{ env }}.env bestand"
+  set_fact:
+    parsed_secrets_raw: >-
+      {% set secrets = {} %}
+      {% set file_path = local_secret_path + '/' + env + '/' + env + '.env' %}
+      {% for line in lookup('file', file_path).splitlines() %}
+        {% if '=' in line and not line.startswith('#') and line.strip() != '' %}
+          {% set parts = line.split('=', 1) %}
+          {% set _ = secrets.update({parts[0].strip(): parts[1].strip()}) %}
+        {% endif %}
+      {% endfor %}
+      {{ secrets }}
+
+- name: "Secret: curity-vars (shell-stijl .env)"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: curity-vars
+        namespace: "curity-{{ env }}"
+      stringData: "{{ parsed_secrets_raw | from_yaml }}"
+
+- name: "Secret: curity-config-secret"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: curity-config-secret
+        namespace: "curity-{{ env }}"
+      stringData:
+        configuration.xml: "{{ lookup('file', local_secret_path + 'curity-config.xml') }}"
+
+- name: "Secret: testapp-vars aanmaken voor {{ env }}"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: testapp-vars
+        namespace: "curity-{{ env }}"
+      stringData:
+        CLIENT_ID: "{{ testapp_client_id }}"
+        CLIENT_SECRET: "{{ testapp_client_secret }}"
+        ISSUER_URL: "{{ testapp_issuer_url }}"
+        REDIRECT_URI: "https://{{ testapp_app_domain }}/callback"
+        SESSION_SECRET: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
+
+- name: "ConfigMap: Database Init SQL"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: curity-db-init-sql
+        namespace: "curity-{{ env }}"
+      data:
+        postgres-create_database.sql: "{{ lookup('file', local_secret_path + 'postgres-create_database.sql') }}"
+
+- name: "Secret: db-user-creds (voor CloudNativePG)"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: db-user-creds
+        namespace: "curity-{{ env }}"
+      stringData:
+        username: "{{ db_user }}"
+        password: "{{ db_password }}"
+
+- name: "Secret: curity-cluster-secret"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: curity-cluster-secret
+        namespace: "curity-{{ env }}"
+      stringData:
+        PASSWORD: "{{ cluster_password }}"
+
+- name: "Secret: tailscale-auth"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: tailscale-auth
+        namespace: "curity-{{ env }}"
+      stringData:
+        TS_AUTHKEY: "{{ tailscale_auth_key }}"
+
+- name: "Apply Master Argo App voor {{ env  }}"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition: "{{ lookup('template', 'templates/master-app.yaml.j2') }}"
