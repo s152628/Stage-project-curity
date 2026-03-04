@@ -81,6 +81,7 @@
           helm:
             values: |
               grafana:
+                adminPassword: "{{ grafana_admin_password }}"
                 grafana.ini:
                   server:
                     domain: {{ grafana_link }}
