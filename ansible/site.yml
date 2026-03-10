@@ -11,3 +11,4 @@
     - argocd_setup
     - tailscale_k8s_bridge
     - deploy_env
+    - post_deploy

@@ -62,6 +62,64 @@
             - CreateNamespace=true
             - ServerSideApply=true
             - replace=true
+- name: Rol HashiCorp Vault uit via Argo CD (Raft HA)
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: vault
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          chart: vault
+          repoURL: https://helm.releases.hashicorp.com
+          targetRevision: 0.28.0  
+          helm:
+            values: |
+              server:
+                replicas: 3
+                affinity: ""
+                ha:
+                  enabled: true
+                  raft:
+                    enabled: true
+                    setNodeId: true
+                    config: |
+                      ui = true
+                      listener "tcp" {
+                        tls_disable = 1
+                        address = "0.0.0.0:8200"
+                        cluster_address = "0.0.0.0:8201"
+                      }
+                      storage "raft" {
+                        path = "/vault/data"
+                      }
+                      service_registration "kubernetes" {}
+                dataStorage:
+                  enabled: true
+                  size: 10Gi
+              ui:
+                enabled: true
+                serviceType: "ClusterIP"
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: vault
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+        ignoreDifferences:
+          - group: admissionregistration.k8s.io
+            kind: MutatingWebhookConfiguration
+            name: vault-agent-injector-cfg
+            jsonPointers:
+              - /webhooks/0/clientConfig/caBundle
 - name: "Installeer de Monitoring Stack via ArgoCD"
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml

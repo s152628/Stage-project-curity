@@ -1,0 +1,84 @@
+- name: Wacht tot de Vault pod bestaat in het cluster
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: Pod
+    name: vault-0
+    namespace: vault
+  register: vault_pod_exists
+  until: "vault_pod_exists.resources | length > 0"
+  retries: 30
+  delay: 10
+
+- name: Check Vault Initialisatie Status via Exec
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: vault-0
+    command: vault status -format=json
+  register: vault_status_raw
+  failed_when: false
+  until: vault_status_raw.rc is defined
+  retries: 10
+  delay: 5
+
+- name: Parse Vault Status
+  set_fact:
+    vault_status: "{{ (vault_status_raw.stdout | default('{}')) | from_json }}"
+  when: vault_status_raw.stdout is defined and vault_status_raw.stdout != ""
+
+- name: Forceer 'uninitialized' als output leeg is
+  set_fact:
+    vault_status: { "initialized": false, "sealed": true }
+  when: vault_status_raw.stdout is not defined or vault_status_raw.stdout == ""
+
+- name: Initialiseer Vault
+  when: not vault_status.initialized
+  block:
+    - name: Voer Vault Operator Init uit
+      kubernetes.core.k8s_exec:
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        namespace: vault
+        pod: vault-0
+        command: vault operator init -key-shares=5 -key-threshold=3 -format=json
+      register: vault_init_output
+
+    - name: Sla Vault Keys lokaal op
+      copy:
+        content: "{{ vault_init_output.stdout }}"
+        dest: "{{ local_secret_path }}vault_init_keys.json"
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      when: not vault_status.initialized
+
+- name: Lees Vault Keys uit lokaal bestand
+  set_fact:
+    vault_keys: "{{ lookup('file', local_secret_path + '/vault_init_keys.json') | from_json }}"
+
+- name: Unseal Leader
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: vault-0
+    command: "vault operator unseal {{ item }}"
+  loop: "{{ vault_keys.unseal_keys_b64[0:3] }}"
+
+- name: Laat volgers het cluster joinen
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: "vault-{{ item }}"
+    command: "vault operator raft join http://vault-0.vault-internal:8200"
+  loop: [1, 2]
+  register: join_result
+  failed_when: false 
+
+- name: Unseal Volgers
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: "vault-{{ item.0 }}"
+    command: "vault operator unseal {{ item.1 }}"
+  with_nested:
+    - [1, 2]
+    - "{{ vault_keys.unseal_keys_b64[0:3] }}"
