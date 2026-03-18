@@ -120,7 +120,7 @@ spec:
         app: auth-testapp
       annotations:
         vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "testapp-role"
+        vault.hashicorp.com/role: "testapp-role-dev"
         vault.hashicorp.com/agent-inject-secret-testapp-vars: "secret/data/dev/testapp/vars"
         vault.hashicorp.com/agent-inject-template-testapp-vars: |
           {{- with secret "secret/data/dev/testapp/vars" -}}
