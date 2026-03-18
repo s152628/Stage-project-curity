@@ -239,34 +239,21 @@
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   register: vault_config_result
-  
+
 - name: Configureer Vault voor Testapp Toegang (Vault Agent)
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
-    # 1. Maak de policy aan: geef expliciet leesrechten op het testapp pad
     echo 'path "secret/data/{{ env }}/testapp/*" { capabilities = ["read"] }' | vault policy write testapp-policy-{{ env }} -
 
-    # 2. Maak de K8s Auth Rol aan en koppel deze aan het ServiceAccount
     vault write auth/kubernetes/role/testapp-role-{{ env }} \
         bound_service_account_names=auth-testapp-sa \
         bound_service_account_namespaces="curity-{{ env }}" \
         policies=testapp-policy-{{ env }} \
         ttl=24h
     EOF
-
-- name: Maak Testapp ServiceAccount aan voor Vault authenticatie
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: auth-testapp-sa
-        namespace: "curity-{{ env }}"
 
 - name: Rol Vault Secrets Operator uit via Argo CD
   kubernetes.core.k8s:
@@ -334,6 +321,17 @@
       kind: ServiceAccount
       metadata:
         name: curity
+        namespace: "curity-{{ env }}"
+
+- name: Maak Testapp ServiceAccount aan voor Vault authenticatie
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: auth-testapp-sa
         namespace: "curity-{{ env }}"
 
 - name: Configureer VaultAuth voor VSO in de Curity namespace
