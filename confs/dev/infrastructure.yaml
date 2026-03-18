@@ -142,7 +142,7 @@ spec:
         ports:
         - containerPort: 3000
         command: ["/bin/sh", "-c"]
-        args: ["source /vault/secrets/testapp-vars && exec node testapp.js"]
+        args: [". /vault/secrets/testapp-vars && exec node testapp.js"]
 ---
 apiVersion: v1
 kind: Service
