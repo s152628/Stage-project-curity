@@ -34,11 +34,11 @@ curity:
         memory: 1Gi
   runtime:
     livenessProbe:
-      initialDelaySeconds: 45
+      initialDelaySeconds: 60
       periodSeconds: 30
       failureThreshold: 3
     readinessProbe:
-      initialDelaySeconds: 40
+      initialDelaySeconds: 60
       periodSeconds: 30
       failureThreshold: 3
     resources:
