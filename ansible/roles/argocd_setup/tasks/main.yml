@@ -38,6 +38,14 @@
   retries: 12
   delay: 10
 
+- name: Controleer of het Argo CD wachtwoord al eens is ingesteld
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: Secret
+    name: argocd-secret
+    namespace: argocd
+  register: argocd_secret_check
+
 - name: Update argocd-secret
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
@@ -50,7 +58,10 @@
         admin.password: "{{ generated_hash.stdout | trim }}"
         admin.passwordMtime: "{{ ansible_facts['date_time']['iso8601'] }}"
   register: password_update
-
+  when: >
+    argocd_secret_check.resources | length > 0 and
+    'admin.password' not in (argocd_secret_check.resources[0].data | default({}))
+    
 - name: Forceer Argo CD om de nieuwe secret in te laden
   shell: kubectl rollout restart deployment argocd-server -n argocd
   environment:
