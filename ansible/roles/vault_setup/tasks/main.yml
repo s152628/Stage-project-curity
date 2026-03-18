@@ -287,7 +287,7 @@
     echo 'path "secret/data/{{ env }}/tailscale/*" { capabilities = ["read"] }' | vault policy write tailscale-policy-{{ env }} -
 
     vault write auth/kubernetes/role/tailscale-role-{{ env }} \
-        bound_service_account_names=tailscale-vault-sa \
+        bound_service_account_names=tailscale-sa \
         bound_service_account_namespaces="curity-{{ env }}" \
         policies=tailscale-policy-{{ env }} \
         ttl=24h
@@ -370,17 +370,6 @@
       kind: ServiceAccount
       metadata:
         name: auth-testapp-sa
-        namespace: "curity-{{ env }}"
-
-- name: Maak Tailscale Serviceaccount aan voor Vault authenticatie
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: tailscale-vault-sa
         namespace: "curity-{{ env }}"
 
 
