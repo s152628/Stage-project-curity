@@ -142,22 +142,22 @@
 #       stringData:
 #         configuration.xml: "{{ lookup('file', local_secret_path + 'curity-config.xml') }}"
 
-- name: "Secret: testapp-vars aanmaken voor {{ env }}"
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: testapp-vars
-        namespace: "curity-{{ env }}"
-      stringData:
-        CLIENT_ID: "{{ testapp_client_id }}"
-        CLIENT_SECRET: "{{ testapp_client_secret }}"
-        ISSUER_URL: "{{ testapp_issuer_url }}"
-        REDIRECT_URI: "https://{{ testapp_app_domain }}/callback"
-        SESSION_SECRET: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
+# - name: "Secret: testapp-vars aanmaken voor {{ env }}"
+#   kubernetes.core.k8s:
+#     kubeconfig: /etc/rancher/k3s/k3s.yaml
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: testapp-vars
+#         namespace: "curity-{{ env }}"
+#       stringData:
+#         CLIENT_ID: "{{ testapp_client_id }}"
+#         CLIENT_SECRET: "{{ testapp_client_secret }}"
+#         ISSUER_URL: "{{ testapp_issuer_url }}"
+#         REDIRECT_URI: "https://{{ testapp_app_domain }}/callback"
+#         SESSION_SECRET: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
 
 - name: "ConfigMap: Database Init SQL"
   kubernetes.core.k8s:

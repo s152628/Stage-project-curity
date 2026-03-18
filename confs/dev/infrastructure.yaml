@@ -118,7 +118,20 @@ spec:
     metadata:
       labels:
         app: auth-testapp
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "testapp-role"
+        vault.hashicorp.com/agent-inject-secret-testapp-vars: "secret/data/dev/testapp/vars"
+        vault.hashicorp.com/agent-inject-template-testapp-vars: |
+          {{- with secret "secret/data/dev/testapp/vars" -}}
+          export CLIENT_ID="{{ .Data.data.CLIENT_ID }}"
+          export CLIENT_SECRET="{{ .Data.data.CLIENT_SECRET }}"
+          export ISSUER_URL="{{ .Data.data.ISSUER_URL }}"
+          export REDIRECT_URI="{{ .Data.data.REDIRECT_URI }}"
+          export SESSION_SECRET="{{ .Data.data.SESSION_SECRET }}"
+          {{- end -}}
     spec:
+      serviceAccountName: auth-testapp-sa
       initContainers:
       - name: wait-for-curity
         image: busybox
@@ -128,9 +141,8 @@ spec:
         image: camazotz01/auth-testapp:latest 
         ports:
         - containerPort: 3000
-        envFrom:
-        - secretRef:
-            name: testapp-vars
+        command: ["/bin/sh", "-c"]
+        args: ["source /vault/secrets/testapp-vars && exec node testapp.js"]
 ---
 apiVersion: v1
 kind: Service
