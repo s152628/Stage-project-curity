@@ -136,6 +136,7 @@ spec:
           export SESSION_SECRET="{{ .Data.data.SESSION_SECRET }}"
           {{- end -}}
     spec:
+      serviceAccountName: auth-testapp-sa
       initContainers:
       - name: wait-for-curity
         image: busybox
