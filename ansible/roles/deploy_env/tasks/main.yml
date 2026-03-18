@@ -186,31 +186,31 @@
 #         username: "{{ db_user }}"
 #         password: "{{ db_password }}"
 
-- name: "Secret: curity-cluster-secret"
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: curity-cluster-secret
-        namespace: "curity-{{ env }}"
-      stringData:
-        PASSWORD: "{{ cluster_password }}"
+# - name: "Secret: curity-cluster-secret"
+#   kubernetes.core.k8s:
+#     kubeconfig: /etc/rancher/k3s/k3s.yaml
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: curity-cluster-secret
+#         namespace: "curity-{{ env }}"
+#       stringData:
+#         PASSWORD: "{{ cluster_password }}"
 
-- name: "Secret: tailscale-auth"
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: tailscale-auth
-        namespace: "curity-{{ env }}"
-      stringData:
-        TS_AUTHKEY: "{{ tailscale_auth_key }}"
+# - name: "Secret: tailscale-auth"
+#   kubernetes.core.k8s:
+#     kubeconfig: /etc/rancher/k3s/k3s.yaml
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: tailscale-auth
+#         namespace: "curity-{{ env }}"
+#       stringData:
+#         TS_AUTHKEY: "{{ tailscale_auth_key }}"
 
 - name: "Apply Master Argo App voor {{ env  }}"
   kubernetes.core.k8s:
