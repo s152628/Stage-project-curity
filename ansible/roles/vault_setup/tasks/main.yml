@@ -201,7 +201,7 @@
     {{ {"configuration.xml": lookup("file", curity_config_path)} | to_json }}
     JSON_PAYLOAD
     EOF
-- name: Pomp testapp secrets direct in Vault
+- name: Pomp testapp secrets in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
     export VAULT_ADDR='http://127.0.0.1:8200'
@@ -217,6 +217,30 @@
     }
     JSON_PAYLOAD
     EOF
+
+- name: Pomp curity cluster secret in vault
+  ansible.builtin.shell: |
+    kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault kv put secret/{{ env }}/curity/cluster \
+      PASSWORD='{{ cluster_password }}'
+    EOF
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Pomp tailscale auth token in vault
+  ansible.builtin.shell: |
+    kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault kv put secret/{{ env }}/tailscale/auth \
+      TS_AUTHKEY='{{ tailscale_auth_key }}'
+    EOF
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       
 - name: Configureer Vault voor Curity Toegang
   ansible.builtin.shell: |
@@ -252,6 +276,20 @@
         bound_service_account_names=auth-testapp-sa \
         bound_service_account_namespaces="curity-{{ env }}" \
         policies=testapp-policy-{{ env }} \
+        ttl=24h
+    EOF
+- name: Configureer Vault voor Tailscale Toegang (Vault Agent)
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    echo 'path "secret/data/{{ env }}/tailscale/*" { capabilities = ["read"] }' | vault policy write tailscale-policy-{{ env }} -
+
+    vault write auth/kubernetes/role/tailscale-role-{{ env }} \
+        bound_service_account_names=tailscale-sa \
+        bound_service_account_namespaces="curity-{{ env }}" \
+        policies=tailscale-policy-{{ env }} \
         ttl=24h
     EOF
 
@@ -334,6 +372,18 @@
         name: auth-testapp-sa
         namespace: "curity-{{ env }}"
 
+- name: Maak Tailscale Serviceaccount aan voor Vault authenticatie
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: tailscale-sa
+        namespace: "curity-{{ env }}"
+
+
 - name: Configureer VaultAuth voor VSO in de Curity namespace
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
@@ -406,5 +456,24 @@
         path: "{{ env }}/curity/config"
         destination:
           name: curity-config-secret
+          create: true
+        vaultAuthRef: curity-auth-config
+
+- name: Synchroniseer Curity Cluster Secret van Vault naar K8s Secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultStaticSecret
+      metadata:
+        name: curity-cluster-sync
+        namespace: "curity-{{ env }}"
+      spec:
+        mount: secret
+        type: kv-v2
+        path: "{{ env }}/curity/cluster"
+        destination:
+          name: curity-cluster-secret
           create: true
         vaultAuthRef: curity-auth-config
