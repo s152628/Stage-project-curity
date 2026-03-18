@@ -166,8 +166,42 @@
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   no_log: true
-  register: vault_db_put_result
 
+- name: "Lees en parse {{ env }}.env bestand"
+  set_fact:
+    parsed_secrets_raw: >-
+      {% set secrets = {} %}
+      {% set file_path = local_secret_path + env + '/' + env + '.env' %}
+      {% for line in lookup('file', file_path).splitlines() %}
+        {% if '=' in line and not line.startswith('#') and line.strip() != '' %}
+          {% set parts = line.split('=', 1) %}
+          {% set _ = secrets.update({parts[0].strip(): parts[1].strip()}) %}
+        {% endif %}
+      {% endfor %}
+      {{ secrets }}
+
+- name: Pomp geparste Curity vars in Vault
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/curity/vars -
+    {{ parsed_secrets_raw | from_yaml | to_json }}
+    JSON_PAYLOAD
+    EOF
+
+- name: Pomp Curity XML config in Vault (als JSON)
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/curity/config -
+    {{ {"configuration.xml": lookup("file", curity_config_path)} | to_json }}
+    JSON_PAYLOAD
+    EOF
+      
 - name: Configureer Vault voor Curity Toegang
   ansible.builtin.shell: |
     kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
@@ -292,5 +326,43 @@
         path: "{{env}}/curity/db"
         destination:
           name: db-user-creds
+          create: true
+        vaultAuthRef: curity-auth-config
+
+- name: Synchroniseer Curity Vars van Vault naar K8s Secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultStaticSecret
+      metadata:
+        name: curity-vars-sync
+        namespace: "curity-{{ env }}"
+      spec:
+        mount: secret
+        type: kv-v2
+        path: "{{ env }}/curity/vars"
+        destination:
+          name: curity-vars
+          create: true
+        vaultAuthRef: curity-auth-config
+
+- name: Synchroniseer Curity Config van Vault naar K8s Secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultStaticSecret
+      metadata:
+        name: curity-config-sync
+        namespace: "curity-{{ env }}"
+      spec:
+        mount: secret
+        type: kv-v2
+        path: "{{ env }}/curity/config"
+        destination:
+          name: curity-config-secret
           create: true
         vaultAuthRef: curity-auth-config
