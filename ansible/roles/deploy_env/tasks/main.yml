@@ -104,43 +104,43 @@
             - CreateNamespace=true
             - ServerSideApply=true
 
-- name: "Lees en parse {{ env }}.env bestand"
-  set_fact:
-    parsed_secrets_raw: >-
-      {% set secrets = {} %}
-      {% set file_path = local_secret_path + '/' + env + '/' + env + '.env' %}
-      {% for line in lookup('file', file_path).splitlines() %}
-        {% if '=' in line and not line.startswith('#') and line.strip() != '' %}
-          {% set parts = line.split('=', 1) %}
-          {% set _ = secrets.update({parts[0].strip(): parts[1].strip()}) %}
-        {% endif %}
-      {% endfor %}
-      {{ secrets }}
+# - name: "Lees en parse {{ env }}.env bestand"
+#   set_fact:
+#     parsed_secrets_raw: >-
+#       {% set secrets = {} %}
+#       {% set file_path = local_secret_path + '/' + env + '/' + env + '.env' %}
+#       {% for line in lookup('file', file_path).splitlines() %}
+#         {% if '=' in line and not line.startswith('#') and line.strip() != '' %}
+#           {% set parts = line.split('=', 1) %}
+#           {% set _ = secrets.update({parts[0].strip(): parts[1].strip()}) %}
+#         {% endif %}
+#       {% endfor %}
+#       {{ secrets }}
 
-- name: "Secret: curity-vars (shell-stijl .env)"
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: curity-vars
-        namespace: "curity-{{ env }}"
-      stringData: "{{ parsed_secrets_raw | from_yaml }}"
+# - name: "Secret: curity-vars (shell-stijl .env)"
+#   kubernetes.core.k8s:
+#     kubeconfig: /etc/rancher/k3s/k3s.yaml
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: curity-vars
+#         namespace: "curity-{{ env }}"
+#       stringData: "{{ parsed_secrets_raw | from_yaml }}"
 
-- name: "Secret: curity-config-secret"
-  kubernetes.core.k8s:
-    kubeconfig: /etc/rancher/k3s/k3s.yaml
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: curity-config-secret
-        namespace: "curity-{{ env }}"
-      stringData:
-        configuration.xml: "{{ lookup('file', local_secret_path + 'curity-config.xml') }}"
+# - name: "Secret: curity-config-secret"
+#   kubernetes.core.k8s:
+#     kubeconfig: /etc/rancher/k3s/k3s.yaml
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: curity-config-secret
+#         namespace: "curity-{{ env }}"
+#       stringData:
+#         configuration.xml: "{{ lookup('file', local_secret_path + 'curity-config.xml') }}"
 
 - name: "Secret: testapp-vars aanmaken voor {{ env }}"
   kubernetes.core.k8s:
