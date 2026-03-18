@@ -278,6 +278,7 @@
         policies=testapp-policy-{{ env }} \
         ttl=24h
     EOF
+    
 - name: Configureer Vault voor Tailscale Toegang (Vault Agent)
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
