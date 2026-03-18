@@ -287,7 +287,7 @@
     echo 'path "secret/data/{{ env }}/tailscale/*" { capabilities = ["read"] }' | vault policy write tailscale-policy-{{ env }} -
 
     vault write auth/kubernetes/role/tailscale-role-{{ env }} \
-        bound_service_account_names=tailscale-sa \
+        bound_service_account_names=tailscale-vault-sa \
         bound_service_account_namespaces="curity-{{ env }}" \
         policies=tailscale-policy-{{ env }} \
         ttl=24h
@@ -380,7 +380,7 @@
       apiVersion: v1
       kind: ServiceAccount
       metadata:
-        name: tailscale-sa
+        name: tailscale-vault-sa
         namespace: "curity-{{ env }}"
 
 

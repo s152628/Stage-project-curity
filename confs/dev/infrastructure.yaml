@@ -87,12 +87,7 @@ spec:
       containers:
       - name: tailscale
         image: tailscale/tailscale:latest
-        env:
-        - name: TS_AUTHKEY
-          valueFrom:
-            secretKeyRef:
-              name: tailscale-auth 
-              key: TS_AUTHKEY     
+        env:   
         - name: TS_EXTRA_ARGS
           value: "--hostname=curity-dev-k8s-tunnel"
         command: ["/bin/sh", "-c"]
