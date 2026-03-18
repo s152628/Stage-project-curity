@@ -74,19 +74,24 @@ spec:
     metadata:
       labels:
         app: tailscale-bridge
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "tailscale-role-prod"
+        vault.hashicorp.com/agent-inject-secret-tailscale-auth: "secret/data/prod/tailscale/auth"
+        vault.hashicorp.com/agent-inject-template-tailscale-auth: |
+          {{- with secret "secret/data/prod/tailscale/auth" -}}
+          export TS_AUTHKEY="{{ .Data.data.TS_AUTHKEY }}"
+          {{- end -}}
     spec:
       serviceAccountName: tailscale-sa
       containers:
       - name: tailscale
         image: tailscale/tailscale:latest
-        env:
-        - name: TS_AUTHKEY
-          valueFrom:
-            secretKeyRef:
-              name: tailscale-auth 
-              key: TS_AUTHKEY     
+        env: 
         - name: TS_EXTRA_ARGS
           value: "--hostname=curity-k8s-tunnel"
+        command: ["/bin/sh", "-c"]
+        args: [". /vault/secrets/tailscale-auth && exec /usr/local/bin/containerboot"]
         securityContext:
           capabilities:
             add:
@@ -118,6 +123,18 @@ spec:
     metadata:
       labels:
         app: auth-testapp
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "testapp-role-prod"
+        vault.hashicorp.com/agent-inject-secret-testapp-vars: "secret/data/prod/testapp/vars"
+        vault.hashicorp.com/agent-inject-template-testapp-vars: |
+          {{- with secret "secret/data/prod/testapp/vars" -}}
+          export CLIENT_ID="{{ .Data.data.CLIENT_ID }}"
+          export CLIENT_SECRET="{{ .Data.data.CLIENT_SECRET }}"
+          export ISSUER_URL="{{ .Data.data.ISSUER_URL }}"
+          export REDIRECT_URI="{{ .Data.data.REDIRECT_URI }}"
+          export SESSION_SECRET="{{ .Data.data.SESSION_SECRET }}"
+          {{- end -}}
     spec:
       initContainers:
       - name: wait-for-curity
@@ -128,9 +145,8 @@ spec:
         image: camazotz01/auth-testapp:latest 
         ports:
         - containerPort: 3000
-        envFrom:
-        - secretRef:
-            name: testapp-vars
+        command: ["/bin/sh", "-c"]
+        args: [". /vault/secrets/testapp-vars && exec node testapp.js"]
 ---
 apiVersion: v1
 kind: Service
