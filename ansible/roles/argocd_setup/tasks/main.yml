@@ -81,3 +81,9 @@
         type: git
         url: "https://github.com/s152628/Stage-project-curity.git"
         
+- name: Wacht tot de Argo CD Repo Server volledig operationeel is
+  ansible.builtin.command: >
+    kubectl wait --for=condition=available deployment/argocd-repo-server -n argocd --timeout=120s
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  changed_when: false

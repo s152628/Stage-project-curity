@@ -1,6 +1,6 @@
 ---
 - name: Installeer K3s 
-  shell: curl -sfL https://get.k3s.io | sh -s - --disable traefik --disable servicelb
+  shell: curl -sfL https://get.k3s.io | sh -s - --disable traefik --disable servicelb --secrets-encryption
   args:
     creates: /usr/local/bin/k3s
 

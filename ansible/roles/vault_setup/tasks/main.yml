@@ -1,0 +1,296 @@
+- name: Rol HashiCorp Vault uit via Argo CD (Raft HA)
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: vault
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          chart: vault
+          repoURL: https://helm.releases.hashicorp.com
+          targetRevision: 0.28.0  
+          helm:
+            values: |
+              server:
+                replicas: 3
+                affinity: ""
+                ha:
+                  enabled: true
+                  raft:
+                    enabled: true
+                    setNodeId: true
+                    config: |
+                      ui = true
+                      listener "tcp" {
+                        tls_disable = 1
+                        address = "0.0.0.0:8200"
+                        cluster_address = "0.0.0.0:8201"
+                      }
+                      storage "raft" {
+                        path = "/vault/data"
+                      }
+                      service_registration "kubernetes" {}
+                dataStorage:
+                  enabled: true
+                  size: 10Gi
+              ui:
+                enabled: true
+                serviceType: "ClusterIP"
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: vault
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+        ignoreDifferences:
+          - group: admissionregistration.k8s.io
+            kind: MutatingWebhookConfiguration
+            name: vault-agent-injector-cfg
+            jsonPointers:
+              - /webhooks/0/clientConfig/caBundle
+- name: Wacht tot de Vault pod bestaat in het cluster
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: Pod
+    name: vault-0
+    namespace: vault
+  register: vault_pod_exists
+  until: "vault_pod_exists.resources | length > 0"
+  retries: 30
+  delay: 10
+
+- name: Check Vault Initialisatie Status via Exec
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: vault-0
+    command: vault status -format=json
+  register: vault_status_raw
+  failed_when: false
+  until: vault_status_raw.rc is defined
+  retries: 10
+  delay: 5
+
+- name: Parse Vault Status
+  set_fact:
+    vault_status: "{{ (vault_status_raw.stdout | default('{}')) | from_json }}"
+  when: vault_status_raw.stdout is defined and vault_status_raw.stdout != ""
+
+- name: Forceer 'uninitialized' als output leeg is
+  set_fact:
+    vault_status: { "initialized": false, "sealed": true }
+  when: vault_status_raw.stdout is not defined or vault_status_raw.stdout == ""
+
+- name: Initialiseer Vault
+  when: not vault_status.initialized
+  block:
+    - name: Voer Vault Operator Init uit
+      kubernetes.core.k8s_exec:
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+        namespace: vault
+        pod: vault-0
+        command: vault operator init -key-shares=5 -key-threshold=3 -format=json
+      register: vault_init_output
+
+    - name: Sla Vault Keys lokaal op
+      copy:
+        content: "{{ vault_init_output.stdout }}"
+        dest: "{{ local_secret_path }}vault_init_keys.json"
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      when: not vault_status.initialized
+
+- name: Lees Vault Keys uit lokaal bestand
+  set_fact:
+    vault_keys: "{{ lookup('file', local_secret_path + 'vault_init_keys.json') | from_json }}"
+
+- name: Unseal Leader
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: vault-0
+    command: "vault operator unseal {{ item }}"
+  loop: "{{ vault_keys.unseal_keys_b64[0:3] }}"
+
+- name: Laat volgers het cluster joinen
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: "vault-{{ item }}"
+    command: "vault operator raft join http://vault-0.vault-internal:8200"
+  loop: [1, 2]
+  register: join_result
+  failed_when: false 
+
+- name: Unseal Volgers
+  kubernetes.core.k8s_exec:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    namespace: vault
+    pod: "vault-{{ item.0 }}"
+    command: "vault operator unseal {{ item.1 }}"
+  with_nested:
+    - [1, 2]
+    - "{{ vault_keys.unseal_keys_b64[0:3] }}"
+
+- name: Activeer KV-v2 Secret Engine in Vault
+  ansible.builtin.shell: |
+    kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault secrets enable -path=secret kv-v2 || true
+    EOF
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: kv_enable_result
+    
+- name: Pomp Database Secrets in Vault
+  ansible.builtin.shell: |
+    kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault kv put secret/{{ env }}/curity/db \
+      username='{{ db_user }}' \
+      password='{{ db_password }}'
+    EOF
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  no_log: true
+  register: vault_db_put_result
+
+- name: Configureer Vault voor Curity Toegang
+  ansible.builtin.shell: |
+    kubectl exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault auth enable kubernetes || true
+
+    echo 'path "secret/data/{{ env }}/curity/*" { capabilities = ["read"] }' | vault policy write curity-policy-{{ env }} -
+
+    vault write auth/kubernetes/config kubernetes_host="https://kubernetes.default.svc"
+
+    vault write auth/kubernetes/role/curity-role-{{ env }} \
+        bound_service_account_names=curity \
+        bound_service_account_namespaces="curity-{{ env }}" \
+        policies=curity-policy-{{ env }} \
+        ttl=24h
+    EOF
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: vault_config_result
+
+- name: Rol Vault Secrets Operator uit via Argo CD
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: vault-secrets-operator
+        namespace: argocd
+      spec:
+        project: default
+        source:
+          chart: vault-secrets-operator
+          repoURL: https://helm.releases.hashicorp.com
+          targetRevision: 0.10.0
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: vault-secrets-operator
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+
+- name: Wacht tot de Vault Secrets Operator CRDs geladen zijn door Argo CD
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: CustomResourceDefinition
+    name: vaultstaticsecrets.secrets.hashicorp.com
+  register: crd_check
+  until: crd_check.resources | length > 0
+  retries: 12
+  delay: 10
+
+- name: "Zorg dat Namespace curity-{{ env }} bestaat"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    name: "curity-{{ env }}"
+    kind: Namespace
+    state: present
+
+- name: Configureer VaultConnection 
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultConnection
+      metadata:
+        name: default
+        namespace: vault-secrets-operator
+      spec:
+        address: http://vault.vault.svc.cluster.local:8200
+        skipTLSVerify: true
+
+- name: Maak Curity ServiceAccount aan voor Vault authenticatie
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: curity
+        namespace: "curity-{{ env }}"
+
+- name: Configureer VaultAuth voor VSO in de Curity namespace
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultAuth
+      metadata:
+        name: curity-auth-config 
+        namespace: "curity-{{ env }}"
+      spec:
+        method: kubernetes
+        mount: kubernetes
+        kubernetes:
+          role: curity-role-{{env}}
+          serviceAccount: curity
+
+
+- name: Synchroniseer DB Secrets van Vault naar K8s Secret
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: secrets.hashicorp.com/v1beta1
+      kind: VaultStaticSecret
+      metadata:
+        name: db-creds-sync
+        namespace: "curity-{{ env }}"
+      spec:
+        mount: secret
+        type: kv-v2
+        path: "{{env}}/curity/db"
+        destination:
+          name: db-user-creds
+          create: true
+        vaultAuthRef: curity-auth-config
