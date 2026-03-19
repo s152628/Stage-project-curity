@@ -477,9 +477,9 @@
             <username-attribute>uid</username-attribute>
           </account>
           <attributes>
-            <ldap-attribute-to-fetch>displayName</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>cn</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
-            <ldap-attribute-to-fetch>memberOf</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>groupid</ldap-attribute-to-fetch>
           </attributes>
         </ldap>
       </data-source>
