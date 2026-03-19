@@ -105,8 +105,8 @@
             <authenticator>
               <id>username_password</id>
               <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
-                <account-manager>default-account-manager</account-manager>
-                <credential-manager>default-credential-manager</credential-manager>
+                <account-manager>ldap-accounts</account-manager>
+                <credential-manager>ldap-credentials</credential-manager>
               </html-form>
             </authenticator>
             <authenticator>
@@ -465,6 +465,25 @@
   <facilities xmlns="https://curity.se/ns/conf/base">
     <data-sources>
       <data-source>
+        <id>LDAP</id>
+        <ldap xmlns="https://curity.se/ns/conf/data-access/ldap">
+          <hostname>#{LDAP_HOSTNAME}</hostname>
+          <port>#{LDAP_PORT}</port>
+          <client-id>#{LDAP_CLIENT_ID}</client-id>
+          <client-secret>#{LDAP_CLIENT_SECRET}</client-secret>
+          <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
+          <account>
+            <account-id-attribute>uid</account-id-attribute>
+            <username-attribute>uid</username-attribute>
+          </account>
+          <attributes>
+            <ldap-attribute-to-fetch>displayName</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>memberOf</ldap-attribute-to-fetch>
+          </attributes>
+        </ldap>
+      </data-source>
+      <data-source>
         <id>default-datasource</id>
         <jdbc xmlns="https://curity.se/ns/ext-conf/jdbc">
           <connection-string>#{DB_CONNECTION}</connection-string>
@@ -552,6 +571,10 @@
         </enable-registration>
         <account-data-source>shared_database</account-data-source>
       </account-manager>
+      <account-manager>
+        <id>ldap-accounts</id>
+        <account-data-source>LDAP</account-data-source>
+      </account-manager>
     </account-managers>
     <credential-managers>
       <credential-manager>
@@ -560,6 +583,13 @@
         </Sha2WithSha256>
         <data-source-backed>
           <data-source-id>shared_database</data-source-id>
+        </data-source-backed>
+      </credential-manager>
+      <credential-manager>
+      <id>ldap-credentials</id>
+        <plaintext/>
+        <data-source-backed>
+          <data-source-id>LDAP</data-source-id>
         </data-source-backed>
       </credential-manager>
     </credential-managers>
