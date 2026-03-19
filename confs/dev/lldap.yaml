@@ -54,6 +54,8 @@ spec:
           value: "dc=camazotz,dc=me"
         - name: LLDAP_HTTP_URL
           value: "https://ldap-dev.camazotz.me" 
+        - name: LLDAP_VERBOSE
+          value: "true"
 
         command: ["/bin/sh", "-c"]
         args: [". /vault/secrets/lldap-vars && exec /app/lldap run"]
