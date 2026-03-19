@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lldap-sa
+  namespace: curity-dev
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lldap-data
+  namespace: curity-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lldap
+  namespace: curity-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lldap
+  template:
+    metadata:
+      labels:
+        app: lldap
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "lldap-role-dev"
+        vault.hashicorp.com/agent-inject-secret-lldap-vars: "secret/data/dev/lldap/vars"
+        vault.hashicorp.com/agent-inject-template-lldap-vars: |
+          {{- with secret "secret/data/dev/lldap/vars" -}}
+          export LLDAP_JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
+          export LLDAP_LDAP_USER_PASS="{{ .Data.data.ADMIN_PASSWORD }}"
+          {{- end -}}
+    spec:
+      serviceAccountName: lldap-sa
+      containers:
+      - name: lldap
+        image: nitnelave/lldap:latest
+        ports:
+        - containerPort: 3890
+          name: ldap-port
+        - containerPort: 17170
+          name: http-port
+        env:
+        - name: LLDAP_LDAP_BASE_DN
+          value: "dc=camazotz,dc=me"
+        - name: LLDAP_HTTP_URL
+          value: "https://ldap-dev.camazotz.me" 
+
+        command: ["/bin/sh", "-c"]
+        args: [". /vault/secrets/lldap-vars && exec /app/lldap run"]
+        
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: lldap-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lldap-service
+  namespace: curity-dev
+spec:
+  selector:
+    app: lldap
+  ports:
+    - port: 3890
+      targetPort: 3890
+      name: ldap-port
+    - port: 80
+      targetPort: 17170
+      name: http-port
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lldap-ingress
+  namespace: curity-dev
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-real-ip-cidr: "0.0.0.0/0"
+spec:
+  rules:
+  - host: ldap-dev.camazotz.me
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: lldap-service
+            port:
+              number: 80
