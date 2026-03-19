@@ -41,6 +41,8 @@ spec:
           {{- end -}}
     spec:
       serviceAccountName: lldap-sa
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: lldap
         image: nitnelave/lldap:latest
@@ -79,7 +81,7 @@ spec:
   selector:
     app: lldap
   ports:
-    - port: 3890
+    - port: 3890asc
       targetPort: 3890
       name: ldap-port
     - port: 80
