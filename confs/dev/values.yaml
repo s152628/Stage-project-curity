@@ -33,6 +33,9 @@ curity:
         cpu: 50m
         memory: 1Gi
   runtime:
+    env:
+      - name: LOGGING_LEVEL
+        value: "DEBUG"
     livenessProbe:
       initialDelaySeconds: 60
       periodSeconds: 30
