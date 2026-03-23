@@ -44,7 +44,7 @@ spec:
       initContainers:
       - name: fix-permissions
         image: busybox:latest
-        command: ["sh", "-c", "chown -R 1000:1000 /data && chmod -R 775 /data"]
+        command: ["sh", "-c", "chmod 777 /data"]
         volumeMounts:
         - name: data
           mountPath: /data
@@ -86,7 +86,7 @@ spec:
   selector:
     app: lldap
   ports:
-    - port: 3890asc
+    - port: 3890
       targetPort: 3890
       name: ldap-port
     - port: 80
