@@ -473,13 +473,22 @@
           <client-secret>#{LDAP_CLIENT_SECRET}</client-secret>
           <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
           <account>
+            <ldap-attribute-to-fetch>cn</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>objectclass</ldap-attribute-to-fetch>
             <account-id-attribute>uid</account-id-attribute>
             <username-attribute>uid</username-attribute>
+            <active-state-attribute>objectclass</active-state-attribute>
+            <active-state-attribute-value>person</active-state-attribute-value>
           </account>
           <attributes>
             <ldap-attribute-to-fetch>cn</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
           </attributes>
+          <credentials>
+            <ldap-attribute-to-fetch>cn</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+          </credentials>
         </ldap>
       </data-source>
       <data-source>
