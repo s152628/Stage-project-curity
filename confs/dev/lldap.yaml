@@ -63,8 +63,13 @@ spec:
           value: "https://ldap-dev.camazotz.me" 
         - name: LLDAP_VERBOSE
           value: "true"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lldap-db-creds
+              key: password
         - name: LLDAP_DATABASE_URL
-          value: "sqlite:///data/users.db"
+          value: "postgres://lldapuser:$(POSTGRES_PASSWORD)@lldap-db-rw.curity-dev.svc.cluster.local:5432/lldap"
 
         command: ["/bin/sh", "-c"]
         args: [". /vault/secrets/lldap-vars && exec /app/lldap run"]
