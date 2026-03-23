@@ -34,8 +34,6 @@ spec:
     initdb:
       database: lldap
       owner: lldapuser
-      secret:
-        name: lldap-db-creds
 ---
 # --- TAILSCALE RBAC ---
 apiVersion: v1
