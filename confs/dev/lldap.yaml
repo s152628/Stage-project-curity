@@ -68,6 +68,10 @@ spec:
             secretKeyRef:
               name: lldap-db-app
               key: uri
+        - name: LLDAP_FORCE_UPDATE_PRIVATE_KEY
+          value: "true"
+        - name: LLDAP_FORCE_LDAP_USER_PASS_RESET
+          value: "true"
 
         command: ["/bin/sh", "-c"]
         args: [". /vault/secrets/lldap-vars && exec /app/lldap run"]
