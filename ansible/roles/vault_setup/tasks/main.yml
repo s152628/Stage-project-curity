@@ -252,6 +252,7 @@
     {
       "JWT_SECRET": "{{ lldap_jwt_secret }}",
       "ADMIN_PASSWORD": "{{ lldap_admin_password }}"
+      "LLDAP_KEY_SEED": "{{ lldap_key_seed }}"
     }
     JSON_PAYLOAD
     EOF
