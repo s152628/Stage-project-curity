@@ -38,6 +38,7 @@ spec:
           {{- with secret "secret/data/acc/lldap/vars" -}}
           export LLDAP_JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
           export LLDAP_LDAP_USER_PASS="{{ .Data.data.ADMIN_PASSWORD }}"
+          export LLDAP_KEY_SEED="{{ .Data.data.LLDAP_KEY_SEED }}"
           {{- end -}}
     spec:
       serviceAccountName: lldap-sa
