@@ -64,7 +64,7 @@ metadata:
   name: tailscale-bridge
   namespace: curity-prod
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   selector:
@@ -114,6 +114,8 @@ kind: Deployment
 metadata:
   name: auth-testapp
   namespace: curity-prod
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   replicas: 1
   selector:

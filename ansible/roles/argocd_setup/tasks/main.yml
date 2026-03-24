@@ -98,3 +98,28 @@
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   changed_when: false
+
+- name: Patch Argo CD Application Controller voor restart bug fix
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: patched
+    kind: StatefulSet
+    name: argocd-application-controller
+    namespace: argocd
+    definition:
+      spec:
+        template:
+          spec:
+            initContainers:
+            - name: wait-for-repo-server
+              image: busybox:latest
+              command: 
+              - 'sh'
+              - '-c'
+              - |
+                echo "Wachten tot de Argo CD Repo Server wakker is op poort 8081..."
+                until nc -zv argocd-repo-server.argocd.svc.cluster.local 8081; do 
+                  echo "Repo Server nog niet bereikbaar, probeer opnieuw in 2 seconden..."
+                  sleep 2
+                done
+                echo "Repo Server is online! Controller mag starten."
