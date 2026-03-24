@@ -93,7 +93,7 @@
             <authenticator>
               <id>email_authentication</id>
               <email>
-                <account-manager>default-account-manager</account-manager>
+                <account-manager>ldap-accounts</account-manager>
                 <email-provider>
                   <id>postmark</id>
                 </email-provider>
@@ -107,6 +107,7 @@
               <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
                 <account-manager>ldap-accounts</account-manager>
                 <credential-manager>ldap-credentials</credential-manager>
+                <email-provider>postmark</email-provider>
               </html-form>
             </authenticator>
             <authenticator>
@@ -114,7 +115,7 @@
               <required-authenticator-for-registration>username_password</required-authenticator-for-registration>  
               <passkeys xmlns="https://curity.se/ns/conf/authenticators/passkeys">
                 <account-manager>
-                  <id>default-account-manager</id>
+                  <id>ldap-accounts</id>
                 </account-manager>
               </passkeys>
             </authenticator>
