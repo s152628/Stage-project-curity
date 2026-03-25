@@ -21,20 +21,6 @@ spec:
           - name: curity-db-init-sql
             key: postgres-create_database.sql
 ---
-apiVersion: postgresql.cnpg.io/v1
-kind: Cluster
-metadata:
-  name: lldap-db
-  namespace: curity-dev
-spec:
-  instances: 3
-  storage:
-    size: 1Gi
-  bootstrap:
-    initdb:
-      database: lldap
-      owner: lldapuser
----
 # --- TAILSCALE RBAC ---
 apiVersion: v1
 kind: ServiceAccount
