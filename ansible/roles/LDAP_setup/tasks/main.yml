@@ -36,6 +36,7 @@
     givenName: {{ user.firstName }}
     mail: {{ user.email }}
     userPassword: {{ user.password }}
+    telephoneNumber: {{ user.telephoneNumber }}
 
     {% endfor %}
     EOF

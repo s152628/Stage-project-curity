@@ -475,26 +475,26 @@
           <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
           <account>
             <ldap-attribute-to-fetch>objectClass</ldap-attribute-to-fetch>
-            <ldap-attribute-to-fetch>email</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
             <account-id-attribute>uid</account-id-attribute>
             <username-attribute>uid</username-attribute>
             <search-filter-account-id>(uid={})</search-filter-account-id>
             <search-filter-username>(uid={})</search-filter-username>
-            <search-filter-mail>(email={})</search-filter-mail>
+            <search-filter-mail>(mail={})</search-filter-mail>
             <active-state-attribute>objectClass</active-state-attribute>
             <active-state-attribute-value>inetOrgPerson</active-state-attribute-value>
-            <email-attribute>email</email-attribute>
+            <email-attribute>mail</email-attribute>
           </account>
           <attributes>
-            <ldap-attribute-to-fetch>email</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
           </attributes>
           <credentials>
             <use-attribute-replacement>
             <password-encoding>ssha</password-encoding>
             </use-attribute-replacement>
-            <ldap-attribute-to-fetch>email</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
           </credentials>
         </ldap>
