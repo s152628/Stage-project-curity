@@ -12,3 +12,4 @@
     - vault_setup
     - tailscale_k8s_bridge
     - deploy_env
+    - LDAP_setup
