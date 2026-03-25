@@ -48,6 +48,8 @@ spec:
           value: "true"
         - name: LDAP_REPLICATION_HOSTS
           value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless','ldap://openldap-1.openldap-headless','ldap://openldap-2.openldap-headless']"
+        - name: LDAP_REPLICATION_CONFIG_SYNC_URL
+          value: "ldap://openldap-0.openldap-headless"
         
         volumeMounts:
         - name: ldap-storage
