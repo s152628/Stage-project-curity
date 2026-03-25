@@ -35,6 +35,10 @@ spec:
           {{- end -}}
     spec:
       serviceAccountName: openldap-sa
+      securityContext:
+        runAsUser: 911
+        runAsGroup: 911
+        fsGroup: 911
       containers:
       - name: openldap
         image: osixia/openldap:1.5.0
@@ -44,6 +48,8 @@ spec:
         - containerPort: 636
           name: ldaps
         env:
+        - name: LDAP_LOG_LEVEL
+          value: "256"
         - name: LDAP_ORGANISATION
           value: "Camazotz"
         - name: LDAP_DOMAIN
