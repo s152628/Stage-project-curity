@@ -242,17 +242,15 @@
   environment:
     KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
-- name: Pomp LLDAP secrets in Vault
+- name: Pomp LDAP secrets in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
-    cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/lldap/vars -
+    cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/openldap/vars -
     {
-      "JWT_SECRET": "{{ lldap_jwt_secret }}",
-      "ADMIN_PASSWORD": "{{ lldap_admin_password }}",
-      "LLDAP_KEY_SEED": "{{ lldap_key_seed }}"
+      "ADMIN_PASSWORD": "{{ openldap_admin_password }}"
     }
     JSON_PAYLOAD
     EOF
@@ -309,18 +307,18 @@
         ttl=24h
     EOF
 
-- name: Configureer Vault voor LLDAP Toegang
+- name: Configureer Vault voor openLDAP Toegang
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
-    echo 'path "secret/data/{{ env }}/lldap/*" { capabilities = ["read"] }' | vault policy write lldap-policy-{{ env }} -
+    echo 'path "secret/data/{{ env }}/openldap/*" { capabilities = ["read"] }' | vault policy write openldap-policy-{{ env }} -
 
-    vault write auth/kubernetes/role/lldap-role-{{ env }} \
-        bound_service_account_names=lldap-sa \
+    vault write auth/kubernetes/role/openldap-role-{{ env }} \
+        bound_service_account_names=openldap-sa \
         bound_service_account_namespaces="curity-{{ env }}" \
-        policies=lldap-policy-{{ env }} \
+        policies=openldap-policy-{{ env }} \
         ttl=24h
     EOF
 

@@ -583,6 +583,7 @@
       <account-manager>
         <id>ldap-accounts</id>
         <account-data-source>LDAP</account-data-source>
+        <device-data-source>shared_database</device-data-source>
       </account-manager>
     </account-managers>
     <credential-managers>
