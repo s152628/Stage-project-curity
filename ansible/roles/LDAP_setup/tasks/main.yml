@@ -1,14 +1,19 @@
-- name: Wacht tot ArgoCD de OpenLDAP pod heeft gesynchroniseerd en opgestart
+- name: Wacht tot ArgoCD de wijziging oppakt en de Deployment aanmaakt (max 5 min)
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get deployment openldap -n curity-{{ env }}
+  register: deploy_check
+  until: deploy_check.rc == 0
+  retries: 30 
+  delay: 10
+  changed_when: false
+
+- name: Wacht tot de OpenLDAP database is opgestart en klaar is voor data
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
       --namespace curity-{{ env }} \
       --for=condition=available deployment/openldap \
       --timeout=300s
-  register: wait_result
-  until: wait_result.rc == 0
-  retries: 12
-  delay: 10
-  
+  changed_when: false
 - name: Lees users.json in als variabele
   ansible.builtin.include_vars:
     file: users.json
