@@ -1,8 +1,8 @@
 - name: Wacht tot ArgoCD de wijziging oppakt en de Deployment aanmaakt (max 5 min)
   ansible.builtin.shell: |
-    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get deployment openldap -n curity-{{ env }}
-  register: deploy_check
-  until: deploy_check.rc == 0
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get statefulset openldap -n curity-{{ env }}
+  register: sts_check
+  until: sts_check.rc == 0
   retries: 30 
   delay: 10
   changed_when: false
@@ -11,7 +11,7 @@
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
       --namespace curity-{{ env }} \
-      --for=condition=available deployment/openldap \
+      --for=condition=Ready pod/openldap-0 \
       --timeout=300s
   changed_when: false
 - name: Lees users.json in als variabele
@@ -21,7 +21,7 @@
 
 - name: Vertaal JSON naar LDIF en injecteer direct in OpenLDAP voor {{ env }}
   ansible.builtin.shell: |
-    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} deployment/openldap -- ldapadd -x -D "cn=admin,dc=camazotz,dc=me" -w "{{ openldap_admin_password }}" -H ldap://localhost << 'EOF'
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- ldapadd -x -D "cn=admin,dc=camazotz,dc=me" -w "{{ openldap_admin_password }}" -H ldap://localhost << 'EOF'
     dn: ou=people,dc=camazotz,dc=me
     objectClass: organizationalUnit
     ou: people
