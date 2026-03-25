@@ -54,10 +54,9 @@ spec:
         volumeMounts:
         - name: ldap-storage
           mountPath: /var/lib/ldap
-          subPath: data
         - name: ldap-storage
           mountPath: /etc/ldap/slapd.d
-          subPath: config
+          
   volumeClaimTemplates:
   - metadata:
       name: ldap-storage
