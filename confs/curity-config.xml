@@ -474,7 +474,7 @@
           <client-secret>#{LDAP_CLIENT_SECRET}</client-secret>
           <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
           <account>
-            <ldap-attribute-to-fetch>active_state</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>objectClass</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>email</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
             <account-id-attribute>uid</account-id-attribute>
@@ -482,8 +482,8 @@
             <search-filter-account-id>(uid={})</search-filter-account-id>
             <search-filter-username>(uid={})</search-filter-username>
             <search-filter-mail>(email={})</search-filter-mail>
-            <active-state-attribute>active_state</active-state-attribute>
-            <active-state-attribute-value>true</active-state-attribute-value>
+            <active-state-attribute>objectClass</active-state-attribute>
+            <active-state-attribute-value>inetOrgPerson</active-state-attribute-value>
             <email-attribute>email</email-attribute>
           </account>
           <attributes>
