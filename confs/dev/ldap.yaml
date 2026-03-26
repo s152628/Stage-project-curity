@@ -6,76 +6,49 @@ metadata:
 spec:
   serviceName: "openldap-headless"
   replicas: 3
-  podManagementPolicy: Parallel
-  selector:
-    matchLabels:
-      app: openldap
+  podManagementPolicy: OrderedReady
   template:
-    metadata:
-      labels:
-        app: openldap
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/agent-init-first: "true"
-        vault.hashicorp.com/role: "openldap-role-dev"
-        vault.hashicorp.com/agent-inject-secret-admin-pass: "secret/data/dev/openldap/vars"
-        vault.hashicorp.com/agent-inject-template-admin-pass: |
-          {{- with secret "secret/data/dev/openldap/vars" -}}
-          {{ .Data.data.ADMIN_PASSWORD }}
-          {{- end -}}
     spec:
-      serviceAccountName: openldap-sa
-      securityContext:
-        fsGroup: 911
       containers:
       - name: openldap
-        # command: ["/bin/sleep", "infinity"]
         image: osixia/openldap:1.5.0
-        securityContext: 
-          runAsUser: 0
-          runAsGroup: 0
         command:
           - /bin/sh
           - -c
           - |
+            # Bereken de unieke Server ID (1, 2, 3) op basis van de Pod Index
             INDEX=$(hostname | rev | cut -d'-' -f1 | rev)
             export LDAP_SERVER_ID=$((INDEX + 1))
-            echo "Starting LDAP with forced ServerID: $LDAP_SERVER_ID"
+            echo "Bootstrapping LDAP with ServerID: $LDAP_SERVER_ID"
             exec /container/tool/run --copy-service
-        ports:
-        - containerPort: 389
-          name: ldap
-        - containerPort: 636
-          name: ldaps
         env:
         - name: LDAP_LOG_LEVEL
-          value: "-1" 
-        - name: CONTAINER_LOG_LEVEL
-          value: "5" 
+          value: "256"
         - name: LDAP_ORGANISATION
           value: "Camazotz"
         - name: LDAP_DOMAIN
           value: "camazotz.me"
         - name: LDAP_ADMIN_PASSWORD_FILE
           value: "/vault/secrets/admin-pass"
-        - name: "LDAP_WAIT_FOR_HOSTS"
-          value: "true"
-        - name: LDAP_WAIT_FOR_HOSTS_TIMEOUT
-          value: "300"
+        - name: LDAP_CONFIG_PASSWORD_FILE 
+          value: "/vault/secrets/admin-pass"
+
         - name: LDAP_REPLICATION
           value: "true"
-        # - name: LDAP_URLS
-        #   value: "ldap:/// ldaps:/// ldapi:///"
-        # - name: LDAP_REPLICATION_HOSTS
-        #   value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless:389','ldap://openldap-1.openldap-headless:389','ldap://openldap-2.openldap-headless:389']"
+        
+        - name: LDAP_REPLICATION_HOSTS
+          value: "ldap://openldap-0.openldap-headless.curity-dev.svc.cluster.local ldap://openldap-1.openldap-headless.curity-dev.svc.cluster.local ldap://openldap-2.openldap-headless.curity-dev.svc.cluster.local"
+        
+        - name: LDAP_REPLICATION_DB_SYNCPROV
+          value: "binddn=\"cn=admin,dc=camazotz,dc=me\" bindmethod=simple credentials=$(cat /vault/secrets/admin-pass) searchbase=\"dc=camazotz,dc=me\" type=refreshAndPersist retry=\"5 5 300 5\" timeout=1"
+        - name: LDAP_REPLICATION_CONFIG_SYNCPROV
+          value: "binddn=\"cn=admin,cn=config\" bindmethod=simple credentials=$(cat /vault/secrets/admin-pass) searchbase=\"cn=config\" type=refreshAndPersist retry=\"5 5 300 5\" timeout=1"
+
+        - name: LDAP_WAIT_FOR_HOSTS
+          value: "false"
         - name: LDAP_TLS
           value: "false"
-        - name: LDAP_REPLICATION_TLS_CHECK_PEER
-          value: "false"
-        - name: LDAP_REPLICATION_DB_SYNC_URL
-          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
-        - name: LDAP_REPLICATION_CONFIG_SYNC_URL
-          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
+
         volumeMounts:
         - name: ldap-storage
           mountPath: /var/lib/ldap
