@@ -47,7 +47,7 @@ spec:
         - name: LDAP_ADMIN_PASSWORD_FILE
           value: "/vault/secrets/admin-pass"
         - name: LDAP_REPLICATION
-          value: "false"
+          value: "true"
         - name: LDAP_REPLICATION_HOSTS
           value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless','ldap://openldap-1.openldap-headless','ldap://openldap-2.openldap-headless']"
         - name: LDAP_REPLICATION_DB_SYNC_URL
