@@ -66,8 +66,8 @@ spec:
           value: "true"
         # - name: LDAP_URLS
         #   value: "ldap:/// ldaps:/// ldapi:///"
-        - name: LDAP_REPLICATION_HOSTS
-          value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless:389','ldap://openldap-1.openldap-headless:389','ldap://openldap-2.openldap-headless:389']"
+        # - name: LDAP_REPLICATION_HOSTS
+        #   value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless:389','ldap://openldap-1.openldap-headless:389','ldap://openldap-2.openldap-headless:389']"
         - name: LDAP_TLS
           value: "false"
         - name: LDAP_REPLICATION_TLS_CHECK_PEER
