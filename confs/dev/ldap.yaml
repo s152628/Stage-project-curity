@@ -46,6 +46,8 @@ spec:
           value: "camazotz.me"
         - name: LDAP_ADMIN_PASSWORD_FILE
           value: "/vault/secrets/admin-pass"
+        - name: "LDAP_WAIT_FOR_HOSTS"
+          value: "true"
         - name: LDAP_REPLICATION
           value: "true"
         - name: LDAP_REPLICATION_HOSTS
@@ -63,6 +65,8 @@ spec:
           subPath: config
 
   volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
   - metadata:
       name: ldap-storage
     spec:
