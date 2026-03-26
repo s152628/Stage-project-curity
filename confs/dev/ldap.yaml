@@ -40,14 +40,10 @@ spec:
         - containerPort: 636
           name: ldaps
         env:
-        - name: POD_INDEX
+        - name: HOSTNAME
           valueFrom:
             fieldRef:
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-        - name: LDAP_SERVER_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+              fieldPath: metadata.name
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
