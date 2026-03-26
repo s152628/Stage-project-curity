@@ -51,19 +51,19 @@ spec:
         - name: LDAP_ADMIN_PASSWORD_FILE
           value: "/vault/secrets/admin-pass"
         - name: "LDAP_WAIT_FOR_HOSTS"
-          value: "true"
+          value: "false"
         - name: LDAP_REPLICATION
           value: "true"
         - name: LDAP_URLS
-          value: "ldap:/// ldaps:/// ldapi:/// ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
+          value: "ldap:/// ldaps:/// ldapi:///"
         - name: LDAP_REPLICATION_HOSTS
           value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
         - name: LDAP_REPLICATION_TLS_CHECK_PEER
           value: "false"
         - name: LDAP_REPLICATION_DB_SYNC_URL
-          value: "ldap://openldap-0.openldap-headless"
+          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
         - name: LDAP_REPLICATION_CONFIG_SYNC_URL
-          value: "ldap://openldap-0.openldap-headless"
+          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
         volumeMounts:
         - name: ldap-storage
           mountPath: /var/lib/ldap
