@@ -39,7 +39,9 @@ spec:
           name: ldaps
         env:
         - name: LDAP_LOG_LEVEL
-          value: "256"
+          value: "-1" 
+        - name: CONTAINER_LOG_LEVEL
+          value: "5" 
         - name: LDAP_ORGANISATION
           value: "Camazotz"
         - name: LDAP_DOMAIN
