@@ -64,12 +64,6 @@ spec:
           value: "300"
         - name: LDAP_REPLICATION
           value: "true"
-        - name: LDAP_REPLICATION_CONFIG_SYNCPROV
-          value: "true"
-        - name: LDAP_REPLICATION_DB_SYNCPROV
-          value: "true"
-        - name: LDAP_REPLICATION_SYNCPROV
-          value: "true"
         # - name: LDAP_URLS
         #   value: "ldap:/// ldaps:/// ldapi:///"
         - name: LDAP_REPLICATION_HOSTS
@@ -78,10 +72,10 @@ spec:
           value: "false"
         - name: LDAP_REPLICATION_TLS_CHECK_PEER
           value: "false"
-        # - name: LDAP_REPLICATION_DB_SYNC_URL
-        #   value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
-        # - name: LDAP_REPLICATION_CONFIG_SYNC_URL
-        #   value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
+        - name: LDAP_REPLICATION_DB_SYNC_URL
+          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
+        - name: LDAP_REPLICATION_CONFIG_SYNC_URL
+          value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
         volumeMounts:
         - name: ldap-storage
           mountPath: /var/lib/ldap
