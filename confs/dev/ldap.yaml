@@ -33,8 +33,16 @@ spec:
         securityContext: 
           runAsUser: 0
           runAsGroup: 0
-        command: ["/container/tool/run"]
-        args: ["--copy-service"]
+        command:
+          - /bin/sh
+          - -c
+          - |
+            # Haal de index op uit de hostname (bijv. openldap-0 -> 0)
+            INDEX=$(hostname | rev | cut -d'-' -f1 | rev)
+            # Server ID moet uniek en positief zijn (0 -> 1, 1 -> 2, 2 -> 3)
+            export LDAP_SERVER_ID=$((INDEX + 1))
+            echo "Starting LDAP with forced ServerID: $LDAP_SERVER_ID"
+            exec /container/tool/run --copy-service
         ports:
         - containerPort: 389
           name: ldap
