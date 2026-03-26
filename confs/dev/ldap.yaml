@@ -27,11 +27,12 @@ spec:
         fsGroup: 911
       containers:
       - name: openldap
+        command: ["/bin/sleep", "infinity"]
         image: osixia/openldap:1.5.0
         securityContext: 
           runAsUser: 0
           runAsGroup: 0
-        command: ["/container/tool/run"]
+        # command: ["/container/tool/run"]
         ports:
         - containerPort: 389
           name: ldap
