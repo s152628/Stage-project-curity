@@ -6,7 +6,7 @@ metadata:
 spec:
   serviceName: "openldap-headless"
   replicas: 3
-  podManagementPolicy: OrderedReady
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: openldap
@@ -16,6 +16,7 @@ spec:
         app: openldap
       annotations:
         vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-init-first: "true"
         vault.hashicorp.com/role: "openldap-role-dev"
         vault.hashicorp.com/agent-inject-secret-admin-pass: "secret/data/dev/openldap/vars"
         vault.hashicorp.com/agent-inject-template-admin-pass: |
@@ -37,9 +38,7 @@ spec:
           - /bin/sh
           - -c
           - |
-            # Haal de index op uit de hostname (bijv. openldap-0 -> 0)
             INDEX=$(hostname | rev | cut -d'-' -f1 | rev)
-            # Server ID moet uniek en positief zijn (0 -> 1, 1 -> 2, 2 -> 3)
             export LDAP_SERVER_ID=$((INDEX + 1))
             echo "Starting LDAP with forced ServerID: $LDAP_SERVER_ID"
             exec /container/tool/run --copy-service
@@ -49,14 +48,6 @@ spec:
         - containerPort: 636
           name: ldaps
         env:
-        - name: POD_INDEX
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-        - name: LDAP_SERVER_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
@@ -122,6 +113,7 @@ metadata:
   namespace: curity-dev
 spec:
   clusterIP: None
+  publishNotReadyAddresses: true
   selector:
     app: openldap
   ports:
