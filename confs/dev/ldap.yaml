@@ -16,10 +16,11 @@ spec:
           - /bin/sh
           - -c
           - |
-            # Bereken de unieke Server ID (1, 2, 3) op basis van de Pod Index
             INDEX=$(hostname | rev | cut -d'-' -f1 | rev)
             export LDAP_SERVER_ID=$((INDEX + 1))
-            echo "Bootstrapping LDAP with ServerID: $LDAP_SERVER_ID"
+            echo "Starting LDAP with ServerID: $LDAP_SERVER_ID"
+            
+            
             exec /container/tool/run --copy-service
         env:
         - name: LDAP_LOG_LEVEL
