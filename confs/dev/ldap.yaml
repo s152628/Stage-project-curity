@@ -27,24 +27,18 @@ spec:
         fsGroup: 911
       containers:
       - name: openldap
-        command: ["/bin/sleep", "infinity"]
+        # command: ["/bin/sleep", "infinity"]
         image: osixia/openldap:1.5.0
         securityContext: 
           runAsUser: 0
           runAsGroup: 0
-        # command: ["/container/tool/run"]
+        command: ["/container/tool/run"]
         ports:
         - containerPort: 389
           name: ldap
         - containerPort: 636
           name: ldaps
         env:
-        - name: POD_INDEX
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-        - name: LDAP_SERVER_ID
-          value: "#PYTHON2BASH:int(os.environ['POD_INDEX'])+1"
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
