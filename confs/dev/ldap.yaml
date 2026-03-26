@@ -30,6 +30,7 @@ spec:
       containers:
       - name: openldap
         image: osixia/openldap:1.5.0
+        command: ["/bin/sleep", "infinity"]
         ports:
         - containerPort: 389
           name: ldap
@@ -46,10 +47,10 @@ spec:
           value: "/vault/secrets/admin-pass"
         - name: LDAP_REPLICATION
           value: "false"
-        - name: LDAP_REPLICATION_HOSTS
-          value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless','ldap://openldap-1.openldap-headless','ldap://openldap-2.openldap-headless']"
-        - name: LDAP_REPLICATION_DB_SYNC_URL
-          value: "ldap://openldap-0.openldap-headless"
+        # - name: LDAP_REPLICATION_HOSTS
+        #   value: "#PYTHON2BASH:['ldap://openldap-0.openldap-headless','ldap://openldap-1.openldap-headless','ldap://openldap-2.openldap-headless']"
+        # - name: LDAP_REPLICATION_DB_SYNC_URL
+        #   value: "ldap://openldap-0.openldap-headless"
         
         volumeMounts:
         - name: ldap-storage
