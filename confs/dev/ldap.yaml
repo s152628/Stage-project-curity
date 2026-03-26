@@ -6,6 +6,7 @@ metadata:
 spec:
   serviceName: "openldap-headless"
   replicas: 3
+  podManagementPolicy: OrderedReady
   selector:
     matchLabels:
       app: openldap
