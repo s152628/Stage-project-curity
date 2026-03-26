@@ -34,12 +34,21 @@ spec:
           runAsUser: 0
           runAsGroup: 0
         command: ["/container/tool/run"]
+        args: ["--copy-service"]
         ports:
         - containerPort: 389
           name: ldap
         - containerPort: 636
           name: ldaps
         env:
+        - name: POD_INDEX
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+        - name: LDAP_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
