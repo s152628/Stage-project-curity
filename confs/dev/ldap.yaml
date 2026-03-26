@@ -44,7 +44,7 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
         - name: LDAP_SERVER_ID
-          value: "#PYTHON2BASH:int(os.environ['POD_INDEX']) + 1"
+          value: "#PYTHON2BASH:int(os.environ['POD_INDEX'])+1"
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
