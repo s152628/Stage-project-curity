@@ -40,10 +40,14 @@ spec:
         - containerPort: 636
           name: ldaps
         env:
-        - name: HOSTNAME
+        - name: POD_INDEX
           valueFrom:
             fieldRef:
-              fieldPath: metadata.name
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+        - name: LDAP_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
         - name: LDAP_LOG_LEVEL
           value: "-1" 
         - name: CONTAINER_LOG_LEVEL
@@ -65,7 +69,7 @@ spec:
         - name: LDAP_REPLICATION_HOSTS
           value: "ldap://openldap-0.openldap-headless:389 ldap://openldap-1.openldap-headless:389 ldap://openldap-2.openldap-headless:389"
         - name: LDAP_TLS
-          value: "false"
+          value: "
         - name: LDAP_REPLICATION_TLS_CHECK_PEER
           value: "false"
         - name: LDAP_REPLICATION_DB_SYNC_URL
