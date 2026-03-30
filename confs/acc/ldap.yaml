@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openldap
+  namespace: curity-acc
+spec:
+  serviceName: "openldap-service"
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "openldap-role-acc"
+        vault.hashicorp.com/agent-inject-secret-admin-pass: "secret/data/acc/openldap/vars"
+        vault.hashicorp.com/agent-inject-template-admin-pass: |
+          {{- with secret "secret/data/acc/openldap/vars" -}}
+          {{ .Data.data.ADMIN_PASSWORD }}
+          {{- end -}}
+    spec:
+      serviceAccountName: openldap-sa
+      securityContext:
+        fsGroup: 911
+      containers:
+      - name: openldap
+        image: osixia/openldap:1.5.0
+        command: ["container/tool/run"]
+        args: ["--copy-service"]
+        ports:
+        - containerPort: 389
+          name: ldap
+        - containerPort: 636
+          name: ldaps
+        env:
+        - name: LDAP_LOG_LEVEL
+          value: "256"
+        - name: LDAP_ORGANISATION
+          value: "Camazotz"
+        - name: LDAP_DOMAIN
+          value: "camazotz.me"
+        - name: LDAP_ADMIN_PASSWORD_FILE
+          value: "/vault/secrets/admin-pass"
+        - name: LDAP_CONFIG_PASSWORD_FILE 
+          value: "/vault/secrets/admin-pass"
+        - name: LDAP_REPLICATION
+          value: "false"
+        - name: LDAP_WAIT_FOR_HOSTS
+          value: "false"
+        - name: LDAP_TLS
+          value: "false"
+        volumeMounts:
+        - name: ldap-storage
+          mountPath: /var/lib/ldap
+          subPath: data
+        - name: ldap-storage
+          mountPath: /etc/ldap/slapd.d
+          subPath: config
+
+  volumeClaimTemplates:
+  - metadata:
+      name: ldap-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-service
+  namespace: curity-acc
+spec:
+  selector:
+    app: openldap
+  ports:
+    - name: ldap
+      port: 389
+      targetPort: 389
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openldap-sa
+  namespace: curity-acc
