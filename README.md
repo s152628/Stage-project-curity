@@ -8,7 +8,7 @@ Ssh keys zijn gedeeld tussen ubuntu server en host.
 IP van de ubuntu server staat correct aangegeven in "ansible/inventory/hosts.ini".
 
 ## Uitvoeren van project
-Vanuit de map ansible/ voer je dit commando uit om de omgeving uit te rollen naar de gewenste omgeving.
+Vanuit de map ansible/ voer je dit commando uit om de omgeving uit te rollen naar de gewenste omgeving.\n
 ```ansible-playbook site.yml -e "env=...(dev,acc of prod)" --ask-vault-password```
 
 | Env | Omschrijving | 
@@ -25,7 +25,7 @@ Al de Ansible variabelen worden neergeschreven volgens deze wijze:
 
 ```variabele: "data"```
 
-ansible/inventory/group_vars/all.yml
+#### ansible/inventory/group_vars/all.yml
 
 | Variabele | Omschrijving | 
 | --- | --- |
