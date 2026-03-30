@@ -107,7 +107,7 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 
 
 #### users.json formaat
-
+```json
 {
   "users": [
     {
@@ -121,3 +121,4 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
     }
   ]
 }
+```
