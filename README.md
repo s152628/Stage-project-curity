@@ -6,6 +6,7 @@ Dit project is een samenstelling van verschillende kubernetes yaml files en ansi
 
 - SSH keys zijn gedeeld tussen ubuntu server en host.
 - IP van de ubuntu server staat correct aangegeven in "ansible/inventory/hosts.ini".
+- Een users.json file met een lijst aan users voor in de ldap indien gewenst.
 
 ## Uitvoeren van project
 Vanuit de map ansible/ voer je volgend commando uit om de omgeving uit te rollen naar de gewenste omgeving:
@@ -103,3 +104,20 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 | EMAIL_LOGO | Het pad naar het logo dat in e-mails gebruikt wordt. |
 | LOGO | Het pad naar het logo dat in de browser getoond wordt. |
 | LOGO_SOURCE | De bron-URL of Content Security Policy (CSP) instelling voor afbeeldingen (bijv. self). |
+
+
+#### users.json formaat
+
+{
+  "users": [
+    {
+      "uid": "Username van de gebruiker",
+      "firstName": "Voornaam van de gebruiker",
+      "lastName": "Achternaam van de gebruiker",
+      "email": "E-mail adress van de gebruiker",
+      "telephoneNumber": "Telefoon nummer van de gebruiker in internationaal formaat",
+      "password": "Wachtwoord van de gebruiker",
+      "active_state": "True/False"
+    }
+  ]
+}
