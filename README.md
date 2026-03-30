@@ -100,6 +100,9 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 | SMTP_DEFAULT_SENDER | Het e-mailadres dat als afzender verschijnt. |
 | SMTP_HOST | Hostnaam van de mailserver. |
 | SMTP_PORT | SMTP poort |
+| TWILIO_NUMBER | Het telefoonnummer dat Twilio gebruikt om berichten te versturen. |
+| TWILIO_SID | Het SID van de Twilio client die gebruikt wordt. |
+| TWILIO_TOKEN | Het Auth Token dat de Twilio client gebruikt voor connectie met de API | 
 | THEME_CSS_PROPERTIES | Extra CSS regels of variabelen om de look-and-feel van de loginpagina's aan te passen. |
 | EMAIL_LOGO | Het pad naar het logo dat in e-mails gebruikt wordt. |
 | LOGO | Het pad naar het logo dat in de browser getoond wordt. |
