@@ -90,6 +90,18 @@
       <settings>
         <authentication-service xmlns="https://curity.se/ns/conf/profile/authentication">
           <sms-provider>Twilio</sms-provider>
+          <authentication-actions>
+            <authentication-action>
+              <id>MFA</id>
+              <multi-factor-condition xmlns="https://curity.se/ns/ext-conf/multi-factor-condition">
+                <always>
+                  <second-factor>
+                    <id>email_authentication</id >
+                  </second-factor>
+                </always>
+              </multi-factor-condition>
+            </authentication-action>
+          </authentication-actions>
           <authenticators>
             <authenticator>
               <id>SMS</id>
@@ -114,6 +126,9 @@
             </authenticator>
             <authenticator>
               <id>username_password</id>
+              <authentication-actions>
+                <login>MFA</login>
+              </authentication-actions>
               <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
                 <account-manager>ldap-accounts</account-manager>
                 <credential-manager>ldap-credentials</credential-manager>
@@ -409,6 +424,7 @@
                   <allowed-authenticators>username_password</allowed-authenticators>
                   <allowed-authenticators>passkey</allowed-authenticators>
                   <allowed-authenticators>google</allowed-authenticators>
+                  <allowed-authenticators>SMS</allowed-authenticators>
                 </user-authentication>
                 <allowed-origins>#{CLIENT_2_ORIGIN_URL}</allowed-origins>
                 <capabilities>
@@ -487,6 +503,7 @@
             <ldap-attribute-to-fetch>objectClass</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
             <account-id-attribute>uid</account-id-attribute>
             <username-attribute>uid</username-attribute>
             <search-filter-account-id>(uid={})</search-filter-account-id>
@@ -499,6 +516,7 @@
           <attributes>
             <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
           </attributes>
           <credentials>
             <use-attribute-replacement>
@@ -506,6 +524,7 @@
             </use-attribute-replacement>
             <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
             <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+            <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
           </credentials>
         </ldap>
       </data-source>
