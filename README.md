@@ -59,7 +59,7 @@ Omgevingspecifieke variabelen gebruikt in het playbook. (Overschrijft de algemen
 
 #### {{ local_secret_path }}/{dev|acc|prod}/{dev|acc|prod}.env
 
-De variabelen die gebruikt worden om het XML file aan te vullen.
+De variabelen die gebruikt worden om het XML file aan te vullen. Het template voor de curity-config kan worden vervangen door een volledig ingevuld XML file, MAAR deze mag dan niet op GitHub terrecht komen. Als de template wordt vervangen dan kunnen de variabelen worden genegeerd
 
 | Variabele | Omschrijving | 
 | --- | --- |
