@@ -8,7 +8,7 @@ Ssh keys zijn gedeeld tussen ubuntu server en host.
 IP van de ubuntu server staat correct aangegeven in "ansible/inventory/hosts.ini".
 
 ## Uitvoeren van project
-Vanuit de map ansible/ voer je dit commando uit om de omgeving uit te rollen naar de gewenste omgeving.
+Vanuit de map ansible/ voer je volgend commando uit om de omgeving uit te rollen naar de gewenste omgeving:
 
 ```ansible-playbook site.yml -e "env=...(dev,acc of prod)" --ask-vault-password```
 
@@ -28,6 +28,8 @@ Al de Ansible variabelen worden neergeschreven volgens deze wijze:
 
 #### ansible/inventory/group_vars/all.yml
 
+Algemene variabelen gebruikt in het playbook.
+
 | Variabele | Omschrijving | 
 | --- | --- |
 | local_secret_path | Het pad naar de map waar de lokaal de secrets staan voor Curity (.env files, database creation script). |
@@ -41,3 +43,14 @@ Al de Ansible variabelen worden neergeschreven volgens deze wijze:
 | grafana_link | De URL waar het grafana portaal beschikbaar zou moeten zijn. | 
 | grafana_admin_password | Wachtwoord dat gebruikt wordt om aan te meldem met het admin account op de grafan webinterface. |
 | openldap_admin_password | Wachtwoord dat gebruikt wordt door openldap om met admin rechten jobs uit te voeren. |
+
+#### ansible/inventory/group_vars/dev.yml (of acc.yml of prod.yml)
+
+Omgevingspecifieke variabelen gebruikt in het playbook. (Overschrijft de algemene variabelen)
+
+| Variabele | Omschrijving | 
+| --- | --- |
+| testapp_client_id | Client ID van de Curity client waar de testapp naar moet verwijzen. | 
+| testapp_client_secret |Client secret van de Curity client waar de testapp naar moet verwijzen. | 
+| testapp_app_domain | Domein waar de testapp bereikbaar is. |
+| testapp_issuer_url | Issuer url van de Curity Identity server. | 
