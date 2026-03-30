@@ -89,7 +89,17 @@
       <type xmlns:auth="https://curity.se/ns/conf/profile/authentication">auth:authentication-service</type>
       <settings>
         <authentication-service xmlns="https://curity.se/ns/conf/profile/authentication">
+          <sms-provider>Twilio</sms-provider>
           <authenticators>
+            <authenticator>
+              <id>SMS</id>
+              <sms>
+                <account-manager>ldap-accounts</account-manager>
+                <send-otp-as-code>true</send-otp-as-code>
+                <allow-registration-during-login>false</allow-registration-during-login>
+                <auto-login-enabled>false</auto-login-enabled>
+              </sms>
+            </authenticator>
             <authenticator>
               <id>email_authentication</id>
               <email>
@@ -538,6 +548,16 @@
         </smtp>
       </email-provider>
     </email-providers>
+    <sms-providers>
+      <sms-provider>
+        <id>Twilio</id>
+        <twilio>
+          <from-number>#{TWILIO_NUMBER}</from-number>
+          <account-sid>#{TWILIO_SID}</account-sid>
+          <auth-token>#{TWILIO_TOKEN}</auth-token>
+        </twilio>
+      </sms-provider>
+    </sms-providers>
     <crypto>
       <ssl>
         <server-keystore>
