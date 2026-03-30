@@ -4,8 +4,8 @@ Dit project is een samenstelling van verschillende kubernetes yaml files en ansi
 
 ## Prerequisits
 
-Ssh keys zijn gedeeld tussen ubuntu server en host.
-IP van de ubuntu server staat correct aangegeven in "ansible/inventory/hosts.ini".
+- SSH keys zijn gedeeld tussen ubuntu server en host.
+- IP van de ubuntu server staat correct aangegeven in "ansible/inventory/hosts.ini".
 
 ## Uitvoeren van project
 Vanuit de map ansible/ voer je volgend commando uit om de omgeving uit te rollen naar de gewenste omgeving:
