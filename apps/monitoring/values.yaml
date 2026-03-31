@@ -1,6 +1,6 @@
 grafana:
-  adminPassword: tempadminpassword
-  envValueFrom:
+  adminPassword: ""
+  extraEnvVars:
     GF_SECURITY_ADMIN_PASSWORD:
       secretKeyRef:
         name: grafana-vault-secret
