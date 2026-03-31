@@ -155,7 +155,9 @@
       spec:
         selector:
           matchLabels:
-            app: curity-runtime
+            app.kubernetes.io/name: idsvr
+            app.kubernetes.io/instance: curity-dev-stack
+            role: curity-dev-stack-idsvr-runtime
         endpoints:
         - port: metrics
           scheme: http
