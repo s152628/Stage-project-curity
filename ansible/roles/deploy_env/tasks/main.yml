@@ -90,6 +90,12 @@
                     serve_from_sub_path: false
                 service:
                   type: ClusterIP
+                sidecar:
+                  dashboards:
+                    enabled: true
+                    label: grafana_dashboard
+                    labelValue: "1"
+                    searchNamespace: ALL
                 dashboardProviders:
                   dashboardproviders.yaml:
                     apiVersion: 1
@@ -111,7 +117,7 @@
               prometheus:
                 prometheusSpec:
                   retention: 10d
-                  serviceMopnitorSelectorNilUsesHelmValues: false
+                  serviceMonitorSelectorNilUsesHelmValues: false
                   serviceMonitorNamespaceSelector: {}
         destination:
           server: "https://kubernetes.default.svc"
@@ -123,6 +129,16 @@
           syncOptions:
             - CreateNamespace=true
             - ServerSideApply=true
+
+- name: "Wacht tot ServiceMonitor CRD beschikbaar is"
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: CustomResourceDefinition
+    name: servicemonitors.monitoring.coreos.com
+  register: crd_status
+  until: crd_status.resources | length > 0
+  retries: 10
+  delay: 15
 
 - name: "Maak ServiceMonitor voor Curity"
   kubernetes.core.k8s:
