@@ -63,76 +63,11 @@
             - ServerSideApply=true
             - replace=true
 
-- name: "Installeer de Monitoring Stack via ArgoCD"
+- name: "Activeer Monitoring via GitOps"
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
-    definition:
-      apiVersion: argoproj.io/v1alpha1
-      kind: Application
-      metadata:
-        name: kube-prometheus-stack
-        namespace: argocd
-      spec:
-        project: default
-        source:
-          chart: kube-prometheus-stack
-          repoURL: https://prometheus-community.github.io/helm-charts
-          targetRevision: 82.4.3
-          helm:
-            values: |
-              grafana:
-                adminPassword: "{{ grafana_admin_password }}"
-                grafana.ini:
-                  server:
-                    domain: {{ grafana_link }}
-                    root_url: https://{{ grafana_link }}
-                    serve_from_sub_path: false
-                service:
-                  type: ClusterIP
-                sidecar:
-                  dashboards:
-                    enabled: true
-                    label: grafana_dashboard
-                    labelValue: "1"
-                    searchNamespace: ALL
-                dashboardProviders:
-                  dashboardproviders.yaml:
-                    apiVersion: 1
-                    providers:
-                    - name: 'default'
-                      orgId: 1
-                      folder: ''
-                      type: file
-                      disableDeletion: false
-                      editable: true
-                      options:
-                        path: /var/lib/grafana/dashboards/default
-                dashboards:
-                  default:
-                    curity-authenticators:
-                      gnetId: 11735
-                      revision: 9
-                      datasource: Prometheus
-              prometheus:
-                prometheusSpec:
-                  retention: 10d
-                  serviceMonitorSelectorNilUsesHelmValues: false
-                  serviceMonitorNamespaceSelector: {}
-                  serviceMonitorSelector: {}
-                  podMonitorSelectorNilUsesHelmValues: false
-                  podMonitorSelector: {}
-                  podMonitorNamespaceSelector: {}
-        destination:
-          server: "https://kubernetes.default.svc"
-          namespace: monitoring
-        syncPolicy:
-          automated:
-            prune: true
-            selfHeal: true
-          syncOptions:
-            - CreateNamespace=true
-            - ServerSideApply=true
+    definition: "{{ lookup('url', 'https://raw.githubusercontent.com/s152628/Stage-project-curity.git/apps/monitoring/monitoring.yaml', split_lines=False) | from_yaml }}"
 
 - name: "Wacht tot ServiceMonitor CRD beschikbaar is"
   kubernetes.core.k8s_info:
