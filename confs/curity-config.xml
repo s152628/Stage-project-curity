@@ -103,6 +103,24 @@
             </authentication-action>
           </authentication-actions>
           <authenticators>
+          <authenticator>
+            <id>microsoft</id>
+            <required-authenticator-for-registration>username_password</required-authenticator-for-registration>
+            <totp xmlns="https://curity.se/ns/ext-conf/totp">
+              <account-manager>
+                <id>ldap-accounts</id>
+              </account-manager>
+              <bucket>
+                <data-source>shared_database</data-source>
+              </bucket>
+              <auto-redirect-enabled>true</auto-redirect-enabled>
+              <generated-key-config>
+                <bucket>
+                  <data-source>shared_database</data-source>
+                </bucket>
+              </generated-key-config>
+            </totp>
+          </authenticator>
             <authenticator>
               <id>SMS</id>
               <sms>
@@ -425,6 +443,7 @@
                   <allowed-authenticators>passkey</allowed-authenticators>
                   <allowed-authenticators>google</allowed-authenticators>
                   <allowed-authenticators>SMS</allowed-authenticators>
+                  <allowed-authenticators>microsoft</allowed-authenticators>
                 </user-authentication>
                 <allowed-origins>#{CLIENT_2_ORIGIN_URL}</allowed-origins>
                 <capabilities>

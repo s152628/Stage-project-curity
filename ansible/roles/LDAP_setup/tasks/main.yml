@@ -19,6 +19,10 @@
     file: users.json
     name: user_data
 
+- name: pauzeer voor openLDAP tijd te geven om volledig op te starten
+  ansible.builtin.pause:
+    seconds: 5
+
 - name: Vertaal JSON naar LDIF en injecteer direct in OpenLDAP voor {{ env }}
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- ldapadd -x -D "cn=admin,dc=camazotz,dc=me" -w "{{ openldap_admin_password }}" -H ldap://localhost << 'EOF'
