@@ -1,0 +1,50 @@
+grafana:
+  adminPasswordExistingSecret: "grafana-vault-secret"
+  adminPasswordKey: "ADMIN_PASSWORD"
+  envValueFrom:
+    GF_SERVER_DOMAIN:
+      secretKeyRef:
+        name: grafana-vault-secret
+        key: DOMAIN
+    GF_SERVER_ROOT_URL:
+      secretKeyRef:
+        name: grafana-vault-secret
+        key: ROOT_URL
+  grafana.ini:
+    server:
+      serve_from_sub_path: false
+  service:
+    type: ClusterIP
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      curity-authenticators:
+        gnetId: 11735
+        revision: 9
+        datasource: Prometheus
+prometheus:
+  prometheusSpec:
+    retention: 10d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
