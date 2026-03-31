@@ -119,6 +119,10 @@
                   retention: 10d
                   serviceMonitorSelectorNilUsesHelmValues: false
                   serviceMonitorNamespaceSelector: {}
+                  serviceMonitorSelector: {}
+                  podMonitorSelectorNilUsesHelmValues: false
+                  podMonitorSelector: {}
+                  podMonitorNamespaceSelector: {}
         destination:
           server: "https://kubernetes.default.svc"
           namespace: monitoring
@@ -153,6 +157,9 @@
         labels:
           release: kube-prometheus-stack
       spec:
+        namespaceSelector:
+          matchNames:
+            - curity-{{ env }}
         selector:
           matchLabels:
             app.kubernetes.io/name: idsvr
