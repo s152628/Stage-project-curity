@@ -21,9 +21,6 @@
           </web-ui>
           <restconf>
           </restconf>
-          <metrics>
-            <runtime-metrics/>
-          </metrics>
         </http>
       </admin-service>
       <themes>
