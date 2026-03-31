@@ -126,6 +126,7 @@
 
 - name: "Maak ServiceMonitor voor Curity"
   kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
     definition:
       apiVersion: monitoring.coreos.com/v1
