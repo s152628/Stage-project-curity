@@ -51,6 +51,10 @@ curity:
     service:
       type: ClusterIP
       port: 8443
+      additionalPorts:
+        - name: metrics
+          port: 4466
+          targetPort: 4466
 ingress:
   enabled: true
   admin:
