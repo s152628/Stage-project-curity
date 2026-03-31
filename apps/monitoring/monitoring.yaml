@@ -19,6 +19,13 @@ spec:
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring
+  ignoreDifferences:
+    - group: ""
+      kind: secret
+      name: grafana-vault-secret
+      namespace: monitoring
+      jsonPointers:
+        - /data
   syncPolicy:
     automated:
       prune: true

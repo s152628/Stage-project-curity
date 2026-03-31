@@ -60,9 +60,6 @@ spec:
         - name: ldap-storage
           mountPath: /etc/ldap/slapd.d
           subPath: config
-        syncPolicy:
-          syncOptions:
-            - ServerSideApply=true
 
   volumeClaimTemplates:
   - metadata:
