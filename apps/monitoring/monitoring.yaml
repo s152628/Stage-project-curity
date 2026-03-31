@@ -12,8 +12,8 @@ spec:
       targetRevision: 82.4.3
       helm:
         valueFiles:
-          - $values/monitoring/values.yaml
-    - repoURL: https://github.com/s152628/Stage-project-curity.git/apps
+          - $values/apps/monitoring/values.yaml
+    - repoURL: https://github.com/s152628/Stage-project-curity.git
       targetRevision: main
       ref: values
   destination:
