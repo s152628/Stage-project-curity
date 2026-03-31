@@ -23,6 +23,14 @@ spec:
           {{ .Data.data.ADMIN_PASSWORD }}
           {{- end -}}
     spec:
+      ignoreDifferences:
+        - group: apps
+          kind: StatefulSet
+          name: openldap
+          jsonPointers:
+            - /spec/volumeClaimTemplates/0/apiVersion
+            - /spec/volumeClaimTemplates/0/kind
+            - /spec/volumeClaimTemplates/0/spec/volumeMode
       serviceAccountName: openldap-sa
       securityContext:
         fsGroup: 911
