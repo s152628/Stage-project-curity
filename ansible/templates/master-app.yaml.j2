@@ -23,6 +23,15 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: curity-{{ env }}
+    
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: openldap
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/apiVersion
+        - /spec/volumeClaimTemplates/0/kind
+        - /spec/volumeClaimTemplates/0/spec/volumeMode
 
   syncPolicy:
     automated:
