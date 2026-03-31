@@ -21,7 +21,7 @@ spec:
     namespace: monitoring
   ignoreDifferences:
     - group: ""
-      kind: secret
+      kind: Secret
       name: grafana-vault-secret
       namespace: monitoring
       jsonPointers:
