@@ -116,6 +116,8 @@
                       datasource: Prometheus
               prometheus:
                 prometheusSpec:
+                  externalLabels:
+                    environment: {{ env }}
                   retention: 10d
                   serviceMonitorSelectorNilUsesHelmValues: false
                   serviceMonitorNamespaceSelector: {}
@@ -152,7 +154,7 @@
       apiVersion: monitoring.coreos.com/v1
       kind: ServiceMonitor
       metadata:
-        name: curity-monitor
+        name: curity-monitor-{{ env }}
         namespace: monitoring
         labels:
           release: kube-prometheus-stack
@@ -163,8 +165,8 @@
         selector:
           matchLabels:
             app.kubernetes.io/name: idsvr
-            app.kubernetes.io/instance: curity-dev-stack
-            role: curity-dev-stack-idsvr-runtime
+            app.kubernetes.io/instance: curity-{{ env }}-stack
+            role: curity-{{ env }}-stack-idsvr-runtime
         endpoints:
         - port: metrics
           scheme: http
