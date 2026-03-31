@@ -54,13 +54,14 @@ curity:
     service:
       type: ClusterIP
       port: 8443
-    addutionalPorts:
-      - name: metrics
-        port: 4466
-        targetPort: 4466
-    labels:
-      app: curity-runtime
-      release: kube-prometheus-stack
+      labels:
+        app: curity-runtime
+        release: kube-prometheus-stack
+      additionalPorts:
+        - name: metrics
+          port: 4466
+          targetPort: 4466
+    
 ingress:
   enabled: true
   admin:
