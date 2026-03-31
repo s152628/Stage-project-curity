@@ -25,6 +25,7 @@ spec:
     spec:
       securityContext:
         fsGroup: 911
+      serviceAccountName: openldap-sa
       containers:
       - name: openldap
         image: osixia/openldap:1.5.0
