@@ -111,6 +111,8 @@
               prometheus:
                 prometheusSpec:
                   retention: 10d
+                  serviceMopnitorSelectorNilUsesHelmValues: false
+                  serviceMonitorNamespaceSelector: {}
         destination:
           server: "https://kubernetes.default.svc"
           namespace: monitoring
