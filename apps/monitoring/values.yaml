@@ -1,8 +1,6 @@
 grafana:
-  adminPassword:
-    secretKeyRef:
-      name: grafana-vault-secret
-      key: ADMIN_PASSWORD
+  adminPasswordExistingSecret: "grafana-vault-secret"
+  adminPasswordKey: "ADMIN_PASSWORD"
   envValueFrom:
     GF_SERVER_DOMAIN:
       secretKeyRef:
