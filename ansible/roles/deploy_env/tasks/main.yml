@@ -111,13 +111,11 @@
                 dashboards:
                   default:
                     curity-authenticators:
-                      gnetId: 14421
-                      revision: 1
+                      gnetId: 11735
+                      revision: 9
                       datasource: Prometheus
               prometheus:
                 prometheusSpec:
-                  externalLabels:
-                    environment: {{ env }}
                   retention: 10d
                   serviceMonitorSelectorNilUsesHelmValues: false
                   serviceMonitorNamespaceSelector: {}
