@@ -1,7 +1,9 @@
 grafana:
   admin:
     existingSecret: grafana-vault-secret
+    userKey: ""
     passwordKey: ADMIN_PASSWORD
+  adminUser: admin
   adminPassword: ""
   extraEnvVars:
     # GF_SECURITY_ADMIN_PASSWORD:
