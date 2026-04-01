@@ -75,6 +75,12 @@
     state: present
     definition: "{{ lookup('url', 'https://raw.githubusercontent.com/s152628/Stage-project-curity/main/apps/monitoring/loki-application.yaml', split_lines=False) | from_yaml }}"
 
+- name: "Activeer Grafana Alloy via GitOps"
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition: "{{ lookup('url', 'https://raw.githubusercontent.com/s152628/Stage-project-curity/main/apps/monitoring/grafana-alloy.yaml', split_lines=False) | from_yaml }}"
+    
 - name: "Wacht tot ServiceMonitor CRD beschikbaar is"
   kubernetes.core.k8s_info:
     kubeconfig: /etc/rancher/k3s/k3s.yaml

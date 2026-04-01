@@ -12,21 +12,49 @@ spec:
     helm:
       values: |
         alloy:
+          rbac:
+            create: true
+          controller:
+            type: daemonset
           configMap:
             create: true
             content: |
-              // Ontdek alle pods in de cluster
               discovery.kubernetes "all_pods" {
                 role = "pod"
               }
 
-              // Filter en verzamel logs
+              discovery.relabel "openldap_filter" {
+                targets = discovery.kubernetes.all_pods.targets
+
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_label_app"]
+                  regex         = "openldap"
+                  action        = "keep"
+                }
+
+                rule {
+                  source_labels = ["__meta_kubernetes_namespace"]
+                  target_label  = "namespace"
+                }
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_label_app"]
+                  target_label  = "app"
+                }
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_name"]
+                  target_label  = "pod"
+                }
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_container_name"]
+                  target_label  = "container"
+                }
+              }
+
               loki.source.kubernetes "pod_logs" {
-                targets    = discovery.kubernetes.all_pods.targets
+                targets    = discovery.relabel.openldap_filter.output
                 forward_to = [loki.write.local.receiver]
               }
 
-              // Stuur naar je Loki SingleBinary
               loki.write "local" {
                 endpoint {
                   url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
