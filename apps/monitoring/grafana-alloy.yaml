@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana-alloy
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: alloy
+    targetRevision: 1.6.2  
+    helm:
+      values: |
+        alloy:
+          configMap:
+            create: true
+            content: |
+              // Ontdek alle pods in de cluster
+              discovery.kubernetes "all_pods" {
+                role = "pod"
+              }
+
+              // Filter en verzamel logs
+              loki.source.kubernetes "pod_logs" {
+                targets    = discovery.kubernetes.all_pods.targets
+                forward_to = [loki.write.local.receiver]
+              }
+
+              // Stuur naar je Loki SingleBinary
+              loki.write "local" {
+                endpoint {
+                  url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+                }
+              }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
