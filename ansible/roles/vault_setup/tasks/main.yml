@@ -264,6 +264,7 @@
     cat << 'JSON_PAYLOAD' | vault kv put secret/monitoring/vars -
     {
       "ADMIN_PASSWORD": "{{ grafana_admin_password }}",
+      "ADMIN_USER": "{{ grafana_admin_user }}",
       "DOMAIN": "{{ grafana_link }}"
     }
     JSON_PAYLOAD
