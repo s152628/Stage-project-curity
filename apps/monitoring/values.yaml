@@ -21,6 +21,12 @@ grafana:
   grafana.ini:
     server:
       serve_from_sub_path: false
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-stack.monitoring.svc.cluster.local:3100
+      version: 1
   service:
     type: ClusterIP
   sidecar:
