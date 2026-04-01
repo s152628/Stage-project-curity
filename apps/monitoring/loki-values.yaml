@@ -28,7 +28,8 @@ backend:
 
 promtail:
   enabled: false
-
+alloy:
+  enabled: true
 gateway:
   enabled: false
 grafana:
