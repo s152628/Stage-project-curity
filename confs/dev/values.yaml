@@ -28,10 +28,10 @@ curity:
     resources:
       limits:
         cpu: 1000m
-        memory: 2Gi
+        memory: 1Gi
       requests:
         cpu: 50m
-        memory: 1Gi
+        memory: 512Mi
   runtime:
     env:
       - name: LOGGING_LEVEL
@@ -47,10 +47,10 @@ curity:
     resources:
       limits:
         cpu: 500m
-        memory: 2Gi
+        memory: 512Mi
       requests:
         cpu: 50m
-        memory: 1Gi
+        memory: 256Mi
     service:
       type: ClusterIP
       port: 8443
