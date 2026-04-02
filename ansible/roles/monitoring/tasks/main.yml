@@ -1,0 +1,59 @@
+- name: Stel namespace in op basis van env
+  ansible.builtin.set_fact:
+    namespace: "curity-{{ env }}"
+ 
+- name: Genereer dashboard JSON vanuit template
+  ansible.builtin.template:
+    src: openldap-dashboard.json.j2
+    dest: "/tmp/openldap-dashboard-{{ env }}.json"
+  vars:
+    namespace: "{{ namespace }}"
+ 
+- name: Haal Grafana datasource UID op voor Loki
+  ansible.builtin.uri:
+    url: "{{ grafana_url }}/api/datasources/name/Loki"
+    method: GET
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    return_content: true
+  register: loki_datasource
+  failed_when: loki_datasource.status != 200
+ 
+- name: Lees gegenereerde dashboard JSON in
+  ansible.builtin.slurp:
+    src: "/tmp/openldap-dashboard-{{ env }}.json"
+  register: dashboard_json_raw
+ 
+- name: Vervang DS_LOKI placeholder met echte datasource UID
+  ansible.builtin.set_fact:
+    dashboard_json: >-
+      {{
+        (dashboard_json_raw.content | b64decode)
+        | replace('${DS_LOKI}', loki_datasource.json.uid)
+      }}
+ 
+- name: Importeer dashboard in Grafana
+  ansible.builtin.uri:
+    url: "{{ grafana_url }}/api/dashboards/import"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      dashboard: "{{ dashboard_json | from_json }}"
+      overwrite: true
+      folderId: 0
+    status_code: [200]
+  register: grafana_import_result
+ 
+- name: Toon dashboard URL
+  ansible.builtin.debug:
+    msg: "Dashboard beschikbaar op: {{ grafana_url }}/d/openldap-security-{{ env }}"
+ 
+- name: Verwijder tijdelijk gegenereerd bestand
+  ansible.builtin.file:
+    path: "/tmp/openldap-dashboard-{{ env }}.json"
+    state: absent
+ 
