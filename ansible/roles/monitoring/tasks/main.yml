@@ -1,13 +1,13 @@
 - name: Stel namespace in op basis van env
   ansible.builtin.set_fact:
-    namespace: "curity-{{ env }}"
+    curity_namespace: "curity-{{ env }}"
  
 - name: Genereer dashboard JSON vanuit template
   ansible.builtin.template:
     src: openldap-dashboard.json.j2
     dest: "/tmp/openldap-dashboard-{{ env }}.json"
   vars:
-    namespace: "{{ namespace }}"
+    curity_namespace: "{{ curity_namespace }}"
  
 - name: Haal Grafana datasource UID op voor Loki
   ansible.builtin.uri:
@@ -45,9 +45,13 @@
       dashboard: "{{ dashboard_json | from_json }}"
       overwrite: true
       folderId: 0
+      inputs:
+        - name: "DS_LOKI"
+          type: "datasource"
+          pluginId: "loki"
+          value: "{{ loki_datasource.json.uid }}"
     status_code: [200]
-  register: grafana_import_result
- 
+    
 - name: Toon dashboard URL
   ansible.builtin.debug:
     msg: "Dashboard beschikbaar op: {{ grafana_url }}/d/openldap-security-{{ env }}"
