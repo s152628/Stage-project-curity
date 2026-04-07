@@ -9,3 +9,4 @@ ansible/.vscode/
 ansible/ansible.cfg
 ansible/inventory/
 ansible/roles/LDAP_setup/vars/
+.gitignore
