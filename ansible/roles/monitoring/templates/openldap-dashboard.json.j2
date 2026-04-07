@@ -289,14 +289,14 @@
     },
     {
       "id": 8,
-      "title": "Top IPs met Failed Logins",
-      "description": "IP-adressen met de meeste failed BIND pogingen. Hoge waarden voor één IP = mogelijke brute force.",
+      "title": "Top IPs — Aantal verbindingen",
+      "description": "IP-adressen gesorteerd op aantal ACCEPT verbindingen. Toont welke IPs het meest contact maken met OpenLDAP.",
       "type": "bargauge",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "topk(10, sum by (ip) (count_over_time({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"err=49\" | regexp `ACCEPT from IP=(?P<ip>[0-9.]+):` | __error__=\"\" [$count_range])))",
+          "expr": "topk(10, sum by (ip) (count_over_time({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"ACCEPT from IP=\" | regexp `ACCEPT from IP=(?P<ip>[0-9.]+):` | __error__=\"\" [$count_range])))",
           "legendFormat": "{{ip}}",
           "refId": "A",
           "queryType": "instant"
@@ -309,17 +309,45 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 20 }
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "displayName": "${__series.name}"
         }
       },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "orientation": "horizontal",
-        "displayMode": "gradient"
+        "displayMode": "gradient",
+        "showUnfilled": true
+      }
+    },
+    {
+      "id": 15,
+      "title": "Top IPs — Verbindingen over tijd",
+      "description": "Tijdsreeks van verbindingen per IP. Handig om te zien wanneer een IP plots veel verbindingen maakt.",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (ip) (rate({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"ACCEPT from IP=\" | regexp `ACCEPT from IP=(?P<ip>[0-9.]+):` | __error__=\"\" [$interval])))",
+          "legendFormat": "{{ip}}",
+          "refId": "A",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
       }
     },
     {
@@ -327,7 +355,7 @@
       "title": "Anonieme BIND pogingen over tijd",
       "type": "timeseries",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
       "targets": [
         {
           "expr": "sum(rate({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"BIND anonymous\" [$interval]))",
@@ -349,7 +377,7 @@
       "title": "Root Base Reconnaissance over tijd",
       "type": "timeseries",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
       "targets": [
         {
           "expr": "sum(rate({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"base=\\\"\\\"\" |= \"scope=0\" [$interval]))",
@@ -371,7 +399,7 @@
       "title": "Unrecognized Controls over tijd",
       "type": "timeseries",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
       "targets": [
         {
           "expr": "sum(rate({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"unrecognized control\" [$interval]))",
@@ -394,7 +422,7 @@
       "description": "Welke uid's het meest opgezocht worden. Verdacht als onbekende uid's frequent voorkomen.",
       "type": "table",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 10 },
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
       "targets": [
         {
           "expr": "topk(20, sum by (uid) (count_over_time({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"filter=\" | regexp `filter=\"\\(uid=(?P<uid>[^)]+)\\)\"` | __error__=\"\" [$count_range])))",
@@ -436,7 +464,7 @@
       "description": "Welke DN's falen bij authenticatie. Toont mogelijke targets van een aanval.",
       "type": "table",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 10 },
+      "gridPos": { "x": 0, "y": 36, "w": 12, "h": 10 },
       "targets": [
         {
           "expr": "topk(20, sum by (dn) (count_over_time({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"err=49\" | regexp `BIND dn=\"(?P<dn>[^\"]+)\"` | __error__=\"\" [$count_range])))",
@@ -473,12 +501,54 @@
       }
     },
     {
+      "id": 16,
+      "title": "Alle verbindingen per IP — Tabel",
+      "description": "Overzicht van alle IPs met het totaal aantal verbindingen in de geselecteerde tijdsrange.",
+      "type": "table",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 10 },
+      "targets": [
+        {
+          "expr": "sum by (ip) (count_over_time({app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"} |= \"ACCEPT from IP=\" | regexp `ACCEPT from IP=(?P<ip>[0-9.]+):` | __error__=\"\" [$count_range]))",
+          "legendFormat": "{{ip}}",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              { "id": "displayName", "value": "Aantal verbindingen" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 10 },
+                    { "color": "red", "value": 50 }
+                  ]
+                }
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "sortBy": [{ "displayName": "Aantal verbindingen", "desc": true }]
+      }
+    },
+    {
       "id": 14,
       "title": "Ruwe LDAP Logs — {% endraw %}{{ curity_namespace }}{% raw %}",
       "description": "Live log stream van OpenLDAP in {% endraw %}{{ curity_namespace }}{% raw %}.",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 10 },
+      "gridPos": { "x": 0, "y": 46, "w": 24, "h": 10 },
       "targets": [
         {
           "expr": "{app=\"openldap\", namespace=\"{% endraw %}{{ curity_namespace }}{% raw %}\"}",
