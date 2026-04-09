@@ -1,67 +1,16 @@
 ---
-- name: Rol de Nginx Ingress Controller uit via Argo CD
+- name: Activeer Nginx Ingress Controller via GitOps
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
-    definition:
-      apiVersion: argoproj.io/v1alpha1
-      kind: Application
-      metadata:
-        name: nginx-ingress
-        namespace: argocd
-      spec:
-        project: default
-        source:
-          chart: ingress-nginx
-          repoURL: https://kubernetes.github.io/ingress-nginx
-          targetRevision: 4.1.1
-          helm:
-            values: |
-              controller:
-                kind: DaemonSet
-                hostNetwork: true
-                dnsPolicy: ClusterFirstWithHostNet
-                service:
-                  type: ClusterIP
-                publishService:
-                  enabled: false
-        destination:
-          server: https://kubernetes.default.svc
-          namespace: ingress-nginx
-        syncPolicy:
-          automated:
-            prune: true
-            selfHeal: true
-          syncOptions:
-            - CreateNamespace=true
+    definition: "{{ lookup('url', 'https://raw.githubusercontent.com/s152628/Stage-project-curity/main/apps/nginx-ingress.yaml', split_lines=False) | from_yaml }}"
 
-- name: Rol de CloudNativePG Operator uit via Argo CD
+- name: Activeer CloudNativePG Operator via Argo CD
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
-    definition:
-      apiVersion: argoproj.io/v1alpha1
-      kind: Application
-      metadata:
-        name: cloudnative-pg-operator
-        namespace: argocd
-      spec:
-        project: default
-        source:
-          repoURL: https://cloudnative-pg.github.io/charts
-          targetRevision: '0.27.1'
-          chart: cloudnative-pg
-        destination:
-          server: https://kubernetes.default.svc
-          namespace: cloudnative-pg
-        syncPolicy:
-          automated:
-            prune: true
-            selfHeal: true
-          syncOptions:
-            - CreateNamespace=true
-            - ServerSideApply=true
-            - replace=true
+    definition: "{{ lookup('url', 'https://raw.githubusercontent.com/s152628/Stage-project-curity/main/apps/cloudnativepg.yaml', split_lines=False) | from_yaml }}"
+
 
 - name: "Activeer Monitoring via GitOps"
   kubernetes.core.k8s:
