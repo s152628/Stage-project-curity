@@ -22,93 +22,93 @@ spec:
             key: postgres-create_database.sql
 
 ---
-# --- TAILSCALE RBAC ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: tailscale-sa
-  namespace: curity-prod
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: tailscale-role
-  namespace: curity-prod
-rules:
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "create", "update", "patch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "create", "patch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tailscale-rolebinding
-  namespace: curity-prod
-subjects:
-  - kind: ServiceAccount
-    name: tailscale-sa
-    namespace: curity-prod
-roleRef:
-  kind: Role
-  name: tailscale-role
-  apiGroup: rbac.authorization.k8s.io
+# # --- TAILSCALE RBAC ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: tailscale-sa
+#   namespace: curity-prod
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   name: tailscale-role
+#   namespace: curity-prod
+# rules:
+#   - apiGroups: [""]
+#     resources: ["secrets"]
+#     verbs: ["get", "create", "update", "patch"]
+#   - apiGroups: [""]
+#     resources: ["events"]
+#     verbs: ["get", "create", "patch"]
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: tailscale-rolebinding
+#   namespace: curity-prod
+# subjects:
+#   - kind: ServiceAccount
+#     name: tailscale-sa
+#     namespace: curity-prod
+# roleRef:
+#   kind: Role
+#   name: tailscale-role
+#   apiGroup: rbac.authorization.k8s.io
 
----
-# --- TAILSCALE BRIDGE DEPLOYMENT ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: tailscale-bridge
-  namespace: curity-prod
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: tailscale-bridge
-  template:
-    metadata:
-      labels:
-        app: tailscale-bridge
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "tailscale-role-prod"
-        vault.hashicorp.com/agent-inject-secret-tailscale-auth: "secret/data/prod/tailscale/auth"
-        vault.hashicorp.com/agent-inject-template-tailscale-auth: |
-          {{- with secret "secret/data/prod/tailscale/auth" -}}
-          export TS_AUTHKEY="{{ .Data.data.TS_AUTHKEY }}"
-          {{- end -}}
-    spec:
-      serviceAccountName: tailscale-sa
-      containers:
-      - name: tailscale
-        image: tailscale/tailscale:latest
-        env: 
-        - name: TS_EXTRA_ARGS
-          value: "--hostname=curity-k8s-tunnel"
-        command: ["/bin/sh", "-c"]
-        args: [". /vault/secrets/tailscale-auth && exec /usr/local/bin/containerboot"]
-        securityContext:
-          capabilities:
-            add:
-            - NET_ADMIN
-        volumeMounts:
-        - name: ts-state
-          mountPath: /var/lib/tailscale
-      - name: bridge
-        image: alpine/socat
-        command: ["sh", "-c", "
-         socat TCP-LISTEN:8443,fork,reuseaddr TCP:nginx-ingress-ingress-nginx-controller.ingress-nginx.svc.cluster.local:443
-         "]
-      volumes:
-      - name: ts-state
-        emptyDir: {}
+# ---
+# # --- TAILSCALE BRIDGE DEPLOYMENT ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: tailscale-bridge
+#   namespace: curity-prod
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: tailscale-bridge
+#   template:
+#     metadata:
+#       labels:
+#         app: tailscale-bridge
+#       annotations:
+#         vault.hashicorp.com/agent-inject: "true"
+#         vault.hashicorp.com/role: "tailscale-role-prod"
+#         vault.hashicorp.com/agent-inject-secret-tailscale-auth: "secret/data/prod/tailscale/auth"
+#         vault.hashicorp.com/agent-inject-template-tailscale-auth: |
+#           {{- with secret "secret/data/prod/tailscale/auth" -}}
+#           export TS_AUTHKEY="{{ .Data.data.TS_AUTHKEY }}"
+#           {{- end -}}
+#     spec:
+#       serviceAccountName: tailscale-sa
+#       containers:
+#       - name: tailscale
+#         image: tailscale/tailscale:latest
+#         env: 
+#         - name: TS_EXTRA_ARGS
+#           value: "--hostname=curity-k8s-tunnel"
+#         command: ["/bin/sh", "-c"]
+#         args: [". /vault/secrets/tailscale-auth && exec /usr/local/bin/containerboot"]
+#         securityContext:
+#           capabilities:
+#             add:
+#             - NET_ADMIN
+#         volumeMounts:
+#         - name: ts-state
+#           mountPath: /var/lib/tailscale
+#       - name: bridge
+#         image: alpine/socat
+#         command: ["sh", "-c", "
+#          socat TCP-LISTEN:8443,fork,reuseaddr TCP:nginx-ingress-ingress-nginx-controller.ingress-nginx.svc.cluster.local:443
+#          "]
+#       volumes:
+#       - name: ts-state
+#         emptyDir: {}
 # --- TEST APPLICATION DEPLOYMENT ---
----
+# ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
