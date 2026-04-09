@@ -236,7 +236,7 @@
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
-    vault kv put secret/{{ env }}/tailscale/auth \
+    vault kv put secret/tailscale/auth \
       TS_AUTHKEY='{{ tailscale_auth_key }}'
     EOF
   environment:
@@ -306,6 +306,13 @@
         policies=testapp-policy-{{ env }} \
         ttl=24h
     EOF
+
+- name: Zorg dat de globale infra-mgmt namespace bestaat
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    name: infra-mgmt
+    kind: Namespace
+    state: present
     
 - name: Configureer Vault voor Tailscale Toegang (Vault Agent)
   ansible.builtin.shell: |
@@ -313,12 +320,12 @@
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
-    echo 'path "secret/data/{{ env }}/tailscale/*" { capabilities = ["read"] }' | vault policy write tailscale-policy-{{ env }} -
+    echo 'path "secret/data/tailscale/*" { capabilities = ["read"] }' | vault policy write tailscale-policy -
 
-    vault write auth/kubernetes/role/tailscale-role-{{ env }} \
+    vault write auth/kubernetes/role/tailscale-role \
         bound_service_account_names=tailscale-sa \
-        bound_service_account_namespaces="curity-{{ env }}" \
-        policies=tailscale-policy-{{ env }} \
+        bound_service_account_namespaces="infra-mgmt" \
+        policies=tailscale-policy \
         ttl=24h
     EOF
 
