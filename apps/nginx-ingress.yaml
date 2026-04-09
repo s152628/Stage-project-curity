@@ -9,6 +9,16 @@ spec:
     chart: ingress-nginx
     repoURL: https://kubernetes.github.io/ingress-nginx
     targetRevision: 4.1.1
+    helm:
+      values: |
+        controller:
+          kind: DaemonSet
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
+          service:
+            type: ClusterIP
+          publishService:
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-nginx

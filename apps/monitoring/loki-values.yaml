@@ -31,7 +31,7 @@ promtail:
 alloy:
   enabled: true
   controller:
-    type: daemonset  # Zorgt dat er op elke node een Alloy pod komt
+    type: daemonset
   configMap:
     create: true
     content: |
