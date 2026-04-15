@@ -8,7 +8,7 @@
     dest: "/tmp/openldap-dashboard-{{ env }}.json"
   vars:
     curity_namespace: "{{ curity_namespace }}"
- 
+
 - name: Haal Grafana datasource UID op voor Loki
   ansible.builtin.uri:
     url: "{{ grafana_url }}/api/datasources/name/Loki"
