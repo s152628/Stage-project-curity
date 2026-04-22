@@ -191,16 +191,55 @@
     JSON_PAYLOAD
     EOF
 
-- name: Pomp Curity XML config in Vault (als JSON)
+- name: Laad Curity configuratie variabelen (clients, authenticators, scopes, ...)
+  ansible.builtin.include_vars:
+    file: "{{ local_secret_path }}{{ env }}/curity.yml"
+    name: curity_config
+
+- name: Render Curity XML configuratie vanuit Jinja2 template
+  ansible.builtin.template:
+    src: "{{ curity_config_path }}"
+    dest: "/tmp/curity-config-rendered-{{ env }}.xml"
+  vars:
+    clients: "{{ curity_config.clients }}"
+    authenticators: "{{ curity_config.authenticators }}"
+    scopes: "{{ curity_config.scopes }}"
+    datasources: "{{ curity_config.datasources }}"
+    providers: "{{ curity_config.providers }}"
+    throttlers: "{{ curity_config.throttlers }}"
+    admin_users: "{{ curity_config.admin_users }}"
+  delegate_to: localhost
+  become: false
+
+- name: Pomp gerenderde Curity XML config in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
     export VAULT_ADDR='http://127.0.0.1:8200'
     export VAULT_TOKEN='{{ vault_keys.root_token }}'
 
     cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/curity/config -
-    {{ {"configuration.xml": lookup("file", curity_config_path)} | to_json }}
+    {{ {"configuration.xml": lookup("file", "/tmp/curity-config-rendered-" + env + ".xml")} | to_json }}
     JSON_PAYLOAD
     EOF
+  no_log: true
+
+# - name: Verwijder tijdelijk gerenderd XML bestand
+#   ansible.builtin.file:
+#     path: "/tmp/curity-config-rendered-{{ env }}.xml"
+#     state: absent
+#   delegate_to: localhost
+#   become: false
+
+# - name: Pomp Curity XML config in Vault (als JSON)
+#   ansible.builtin.shell: |
+#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+#     export VAULT_ADDR='http://127.0.0.1:8200'
+#     export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+#     cat << 'JSON_PAYLOAD' | vault kv put secret/{{ env }}/curity/config -
+#     {{ {"configuration.xml": lookup("file", curity_config_path)} | to_json }}
+#     JSON_PAYLOAD
+#     EOF
 - name: Pomp testapp secrets in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'

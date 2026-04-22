@@ -1,0 +1,798 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <environments xmlns="https://curity.se/ns/conf/base">
+    <environment>
+      <base-url>#{RUNTIME_BASE_URL}</base-url>
+      <cluster>
+        <keystore>#{CLUSTER_KEY}</keystore>
+        <host>#{ADMIN_SERVICE_HOST}</host>
+        <port>6789</port>
+      </cluster>
+      <admin-service>
+        <http>
+          <ssl-server-keystore>default-admin-ssl-key</ssl-server-keystore>
+          <web-ui>
+            <ui-modes>
+              <normal-mode>
+                <service-role>default</service-role>
+                <account-manager>default-account-manager</account-manager>
+                <credential-manager>default-credential-manager</credential-manager>
+              </normal-mode>
+            </ui-modes>
+          </web-ui>
+          <restconf>
+          </restconf>
+        </http>
+      </admin-service>
+      <themes>
+        <default-theme>
+          <theme-css-properties>#{THEME_CSS_PROPERTIES}</theme-css-properties>
+          <template-variables>
+            <name>_configured_cspImgsrc</name>
+            <value>#{LOGO_SOURCE}</value>
+          </template-variables>
+          <template-variables>
+            <name>_configured_logo_email_path</name>
+            <value>#{EMAIL_LOGO}</value>
+          </template-variables>
+          <template-variables>
+            <name>_configured_logo_path</name>
+            <value>#{LOGO}</value>
+          </template-variables>
+        </default-theme>
+      </themes>
+      <services>
+        <zones>
+          <default-zone>
+            <symmetric-key>#{SYMMETRIC_KEY}</symmetric-key>
+          </default-zone>
+        </zones>
+        <service-role>
+          <id>default</id>
+          <protocol>https</protocol>
+          <ssl-server-keystore>default-admin-ssl-key</ssl-server-keystore>
+          <webfinger/>
+          <endpoints>applications</endpoints>
+          <endpoints>authentication-service-anonymous</endpoints>
+          <endpoints>authentication-service-authentication</endpoints>
+          <endpoints>authentication-service-registration</endpoints>
+          <endpoints>token-service-anonymous</endpoints>
+          <endpoints>token-service-assisted-token</endpoints>
+          <endpoints>token-service-authorize</endpoints>
+          <endpoints>token-service-introspect</endpoints>
+          <endpoints>token-service-revoke</endpoints>
+          <endpoints>token-service-session</endpoints>
+          <endpoints>token-service-token</endpoints>
+          <endpoints>token-service-userinfo</endpoints>
+        </service-role>
+      </services>
+    </environment>
+  </environments>
+
+  <profiles xmlns="https://curity.se/ns/conf/base">
+    <profile>
+      <id>Applications</id>
+      <type xmlns:apps="https://curity.se/ns/conf/profile/apps">apps:apps-service</type>
+      <settings>
+        <apps-service xmlns="https://curity.se/ns/conf/profile/apps">
+          <oauth-profile-id>token-service</oauth-profile-id>
+        </apps-service>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>applications</id>
+          <uri>/apps</uri>
+          <endpoint-kind>apps-anonymous</endpoint-kind>
+        </endpoint>
+      </endpoints>
+    </profile>
+
+    <profile>
+      <id>authentication-service</id>
+      <type xmlns:auth="https://curity.se/ns/conf/profile/authentication">auth:authentication-service</type>
+      <settings>
+        <authentication-service xmlns="https://curity.se/ns/conf/profile/authentication">
+
+                                        <sms-provider>Twilio</sms-provider>
+          
+                                        <authentication-actions>
+            <authentication-action>
+              <id>MFA</id>
+              <multi-factor-condition xmlns="https://curity.se/ns/ext-conf/multi-factor-condition">
+                <always>
+                  <second-factor>
+                    <id>email_authentication</id>
+                  </second-factor>
+                </always>
+              </multi-factor-condition>
+            </authentication-action>
+          </authentication-actions>
+          
+          <authenticators>
+                        
+                                    <authenticator>
+              <id>username_password</id>
+                            <authentication-actions>
+                <login>MFA</login>
+              </authentication-actions>
+                            <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
+                <account-manager>ldap-accounts</account-manager>
+                <credential-manager>ldap-credentials</credential-manager>
+                                <email-provider>postmark</email-provider>
+                              </html-form>
+            </authenticator>
+
+                                                            
+                                    <authenticator>
+              <id>email_authentication</id>
+              <email>
+                <account-manager>ldap-accounts</account-manager>
+                <email-provider>
+                  <id>postmark</id>
+                </email-provider>
+                                <throttler-service>
+                  <throttler>postmark_throttler</throttler>
+                </throttler-service>
+                              </email>
+            </authenticator>
+
+                                                            
+                                    <authenticator>
+              <id>SMS</id>
+              <sms>
+                <account-manager>ldap-accounts</account-manager>
+                <send-otp-as-code>true</send-otp-as-code>
+                <allow-registration-during-login>false</allow-registration-during-login>
+                <auto-login-enabled>false</auto-login-enabled>
+              </sms>
+            </authenticator>
+
+                                                            
+                                    <authenticator>
+              <id>microsoft</id>
+                            <required-authenticator-for-registration>username_password</required-authenticator-for-registration>
+                            <totp xmlns="https://curity.se/ns/ext-conf/totp">
+                <account-manager>
+                  <id>ldap-accounts</id>
+                </account-manager>
+                <bucket>
+                  <data-source>shared_database</data-source>
+                </bucket>
+                <auto-redirect-enabled>true</auto-redirect-enabled>
+                <generated-key-config>
+                  <bucket>
+                    <data-source>shared_database</data-source>
+                  </bucket>
+                </generated-key-config>
+              </totp>
+            </authenticator>
+
+                                                            
+                                    <authenticator>
+              <id>passkey</id>
+                            <required-authenticator-for-registration>username_password</required-authenticator-for-registration>
+                            <passkeys xmlns="https://curity.se/ns/conf/authenticators/passkeys">
+                <account-manager>
+                  <id>ldap-accounts</id>
+                </account-manager>
+              </passkeys>
+            </authenticator>
+
+                                                            
+                                    <authenticator>
+              <id>google</id>
+              <google xmlns="https://curity.se/ns/conf/authenticators/google">
+                <client-id>#{GOOGLE_CLIENT_ID}</client-id>
+                <client-secret>#{GOOGLE_CLIENT_SECRET}</client-secret>
+              </google>
+            </authenticator>
+
+                                              </authenticators>
+
+          <protocols>
+            <protocol>
+              <id>default-simple-protocol</id>
+              <simple-api/>
+            </protocol>
+          </protocols>
+
+        </authentication-service>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>authentication-service-anonymous</id>
+          <uri>/authn/anonymous</uri>
+          <endpoint-kind>auth-anonymous</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>authentication-service-authentication</id>
+          <uri>/authn/authentication</uri>
+          <endpoint-kind>auth-authentication</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>authentication-service-registration</id>
+          <uri>/authn/registration</uri>
+          <endpoint-kind>auth-registration</endpoint-kind>
+        </endpoint>
+      </endpoints>
+      <token-issuers>
+        <default-token-issuer>
+          <jwt-issuer-settings>
+            <signing-key-id>default-signing-key</signing-key-id>
+          </jwt-issuer-settings>
+          <default-data-source>default-datasource</default-data-source>
+        </default-token-issuer>
+      </token-issuers>
+    </profile>
+
+    <profile>
+      <id>token-service</id>
+      <type xmlns:as="https://curity.se/ns/conf/profile/oauth">as:oauth-service</type>
+      <settings>
+        <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
+          <authentication-service>
+            <authentication-profile>authentication-service</authentication-profile>
+          </authentication-service>
+          <client-capabilities>
+            <code/>
+            <implicit/>
+            <resource-owner-password-credentials>
+              <credential-manager>default-credential-manager</credential-manager>
+            </resource-owner-password-credentials>
+            <client-credentials/>
+            <introspection/>
+            <token-exchange/>
+            <assisted-token/>
+          </client-capabilities>
+
+                    <scopes>
+                        <scope>
+              <id>openid</id>
+              <description>Standard OpenID Connect scope</description>
+                          </scope>
+                        <scope>
+              <id>profile</id>
+              <description>OpenID Connect profile scope</description>
+                            <claims>given_name</claims>
+                            <claims>family_name</claims>
+                            <claims>name</claims>
+                            <claims>nickname</claims>
+                            <claims>preferred_username</claims>
+                            <claims>picture</claims>
+                            <claims>website</claims>
+                            <claims>gender</claims>
+                            <claims>birthdate</claims>
+                            <claims>zoneinfo</claims>
+                            <claims>locale</claims>
+                            <claims>updated_at</claims>
+                            <claims>profile</claims>
+                            <claims>middle_name</claims>
+                          </scope>
+                        <scope>
+              <id>email</id>
+              <description>OpenID Connect email scope</description>
+                            <claims>email</claims>
+                            <claims>email_verified</claims>
+                          </scope>
+                        <scope>
+              <id>phone</id>
+              <description>OpenID Connect phone scope</description>
+                            <claims>phone_number</claims>
+                            <claims>phone_number_verified</claims>
+                          </scope>
+                        <scope>
+              <id>address</id>
+              <description>OpenID Connect address scope</description>
+                            <claims>address</claims>
+                          </scope>
+                      </scopes>
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <claims>
+                        <claim>
+              <name>given_name</name>
+              <description>OpenID Connect given_name claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>family_name</name>
+              <description>OpenID Connect family_name claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>name</name>
+              <description>OpenID Connect name claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>nickname</name>
+              <description>OpenID Connect nickname claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>preferred_username</name>
+              <description>OpenID Connect preferred_username claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>picture</name>
+              <description>OpenID Connect picture claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>website</name>
+              <description>OpenID Connect website claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>gender</name>
+              <description>OpenID Connect gender claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>birthdate</name>
+              <description>OpenID Connect birthdate claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>zoneinfo</name>
+              <description>OpenID Connect zoneinfo claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>locale</name>
+              <description>OpenID Connect locale claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>updated_at</name>
+              <description>OpenID Connect updated_at claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>profile</name>
+              <description>OpenID Connect profile claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>middle_name</name>
+              <description>OpenID Connect middle_name claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>email</name>
+              <description>OpenID Connect email claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>email_verified</name>
+              <description>OpenID Connect email_verified claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>phone_number</name>
+              <description>OpenID Connect phone_number claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>phone_number_verified</name>
+              <description>OpenID Connect phone_number_verified claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claim>
+              <name>address</name>
+              <description>OpenID Connect address claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+                        <claims-value-provider>
+              <id>account-manager-claims-provider</id>
+              <account-manager-claims-provider xmlns="https://curity.se/ns/ext-conf/account-manager-claims-provider">
+                <account-manager>
+                  <id>default-account-manager</id>
+                </account-manager>
+              </account-manager-claims-provider>
+            </claims-value-provider>
+            <claims-mappers>
+              <claims-mapper>
+                <id>default</id>
+                <id_token>
+                                    <claim>given_name</claim>
+                                    <claim>family_name</claim>
+                                    <claim>name</claim>
+                                    <claim>nickname</claim>
+                                    <claim>preferred_username</claim>
+                                    <claim>picture</claim>
+                                    <claim>website</claim>
+                                    <claim>gender</claim>
+                                    <claim>birthdate</claim>
+                                    <claim>zoneinfo</claim>
+                                    <claim>locale</claim>
+                                    <claim>updated_at</claim>
+                                    <claim>profile</claim>
+                                    <claim>middle_name</claim>
+                                    <claim>email</claim>
+                                    <claim>email_verified</claim>
+                                    <claim>phone_number</claim>
+                                    <claim>phone_number_verified</claim>
+                                    <claim>address</claim>
+                                  </id_token>
+                <userinfo>
+                                    <claim>given_name</claim>
+                                    <claim>family_name</claim>
+                                    <claim>name</claim>
+                                    <claim>nickname</claim>
+                                    <claim>preferred_username</claim>
+                                    <claim>picture</claim>
+                                    <claim>website</claim>
+                                    <claim>gender</claim>
+                                    <claim>birthdate</claim>
+                                    <claim>zoneinfo</claim>
+                                    <claim>locale</claim>
+                                    <claim>updated_at</claim>
+                                    <claim>profile</claim>
+                                    <claim>middle_name</claim>
+                                    <claim>email</claim>
+                                    <claim>email_verified</claim>
+                                    <claim>phone_number</claim>
+                                    <claim>phone_number_verified</claim>
+                                    <claim>address</claim>
+                                  </userinfo>
+              </claims-mapper>
+              <default-claims-mapper>default</default-claims-mapper>
+            </claims-mappers>
+          </claims>
+
+          <openid-connect>
+            <expose-metadata>
+            </expose-metadata>
+          </openid-connect>
+
+                    <client-store>
+            <config-backed>
+                            <client>
+                <id>gateway</id>
+                <secret>#{CLIENT_1_SECRET}</secret>
+
+                                <capabilities>
+                  <introspection/>
+                </capabilities>
+
+                              </client>
+                            <client>
+                <id>www</id>
+                <secret>#{CLIENT_2_SECRET}</secret>
+
+                                                <redirect-uris>https://app-dev.camazotz.me/callback</redirect-uris>
+                                                <scope>openid</scope>
+                                <scope>profile</scope>
+                                <scope>email</scope>
+                                <user-authentication>
+                                    <allowed-authenticators>username_password</allowed-authenticators>
+                                    <allowed-authenticators>email_authentication</allowed-authenticators>
+                                    <allowed-authenticators>passkey</allowed-authenticators>
+                                    <allowed-authenticators>google</allowed-authenticators>
+                                    <allowed-authenticators>SMS</allowed-authenticators>
+                                    <allowed-authenticators>microsoft</allowed-authenticators>
+                                  </user-authentication>
+                                                <allowed-origins>https://app-dev.camazotz.me</allowed-origins>
+                                                <capabilities>
+                  <code/>
+                </capabilities>
+                                <validate-port-on-loopback-interfaces>true</validate-port-on-loopback-interfaces>
+                
+                              </client>
+                          </config-backed>
+          </client-store>
+
+        </authorization-server>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>token-service-anonymous</id>
+          <uri>/oauth/v2/oauth-anonymous</uri>
+          <endpoint-kind>oauth-anonymous</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-assisted-token</id>
+          <uri>/oauth/v2/oauth-assisted-token</uri>
+          <endpoint-kind>oauth-assisted-token</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-authorize</id>
+          <uri>/oauth/v2/oauth-authorize</uri>
+          <endpoint-kind>oauth-authorize</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-introspect</id>
+          <uri>/oauth/v2/oauth-introspect</uri>
+          <endpoint-kind>oauth-introspect</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-revoke</id>
+          <uri>/oauth/v2/oauth-revoke</uri>
+          <endpoint-kind>oauth-revoke</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-session</id>
+          <uri>/oauth/v2/oauth-session</uri>
+          <endpoint-kind>oauth-session</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-token</id>
+          <uri>/oauth/v2/oauth-token</uri>
+          <endpoint-kind>oauth-token</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-userinfo</id>
+          <uri>/oauth/v2/oauth-userinfo</uri>
+          <endpoint-kind>oauth-userinfo</endpoint-kind>
+        </endpoint>
+      </endpoints>
+      <token-issuers>
+        <default-token-issuer>
+          <jwt-issuer-settings>
+            <signing-key-id>default-signing-key</signing-key-id>
+          </jwt-issuer-settings>
+          <default-data-source>shared_database</default-data-source>
+        </default-token-issuer>
+      </token-issuers>
+    </profile>
+  </profiles>
+
+  <facilities xmlns="https://curity.se/ns/conf/base">
+    <data-sources>
+            
+            <data-source>
+        <id>LDAP</id>
+        <ldap xmlns="https://curity.se/ns/conf/data-access/ldap">
+          <hostname>#{LDAP_HOSTNAME}</hostname>
+          <port>#{LDAP_PORT}</port>
+          <client-id>#{LDAP_CLIENT_ID}</client-id>
+          <client-secret>#{LDAP_CLIENT_SECRET}</client-secret>
+          <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
+          <account>
+                        <ldap-attribute-to-fetch>objectClass</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
+                        <account-id-attribute>uid</account-id-attribute>
+            <username-attribute>uid</username-attribute>
+            <search-filter-account-id>(uid={})</search-filter-account-id>
+            <search-filter-username>(uid={})</search-filter-username>
+            <search-filter-mail>(mail={})</search-filter-mail>
+            <active-state-attribute>objectClass</active-state-attribute>
+            <active-state-attribute-value>inetOrgPerson</active-state-attribute-value>
+            <email-attribute>mail</email-attribute>
+          </account>
+          <attributes>
+                        <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
+                      </attributes>
+          <credentials>
+            <use-attribute-replacement>
+              <password-encoding>ssha</password-encoding>
+            </use-attribute-replacement>
+                        <ldap-attribute-to-fetch>mail</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>uid</ldap-attribute-to-fetch>
+                        <ldap-attribute-to-fetch>telephoneNumber</ldap-attribute-to-fetch>
+                      </credentials>
+        </ldap>
+      </data-source>
+
+      
+      
+            <data-source>
+        <id>default-datasource</id>
+        <jdbc xmlns="https://curity.se/ns/ext-conf/jdbc">
+          <connection-string>#{DB_CONNECTION}</connection-string>
+          <standard-credentials-mode></standard-credentials-mode>
+          <driver>#{DATABASE_DRIVER}</driver>
+          <username>#{DB_USERNAME}</username>
+          <password>#{DB_PASSWORD}</password>
+        </jdbc>
+      </data-source>
+      
+      
+            <data-source>
+        <id>shared_database</id>
+        <jdbc xmlns="https://curity.se/ns/ext-conf/jdbc">
+          <connection-string>#{SHARED_DB_CONNECTION}</connection-string>
+          <standard-credentials-mode></standard-credentials-mode>
+          <driver>#{SHARED_DB_DRIVER}</driver>
+          <username>#{SHARED_DB_USERNAME}</username>
+          <password>#{SHARED_DB_PASSWORD}</password>
+        </jdbc>
+      </data-source>
+      
+          </data-sources>
+
+            <email-providers>
+            <email-provider>
+        <id>postmark</id>
+        <smtp>
+          <smtp-host>#{SMTP_HOST}</smtp-host>
+          <smtp-port>#{SMTP_PORT}</smtp-port>
+          <enable-tls>true</enable-tls>
+          <tls>
+            <start-tls/>
+          </tls>
+          <default-sender>#{SMTP_DEFAULT_SENDER}</default-sender>
+          <username>#{SMTP_USERNAME}</username>
+          <password>#{SMTP_PASSWORD}</password>
+        </smtp>
+      </email-provider>
+          </email-providers>
+    
+                <sms-providers>
+            <sms-provider>
+        <id>Twilio</id>
+                <twilio>
+          <from-number>#{TWILIO_NUMBER}</from-number>
+          <account-sid>#{TWILIO_SID}</account-sid>
+          <auth-token>#{TWILIO_TOKEN}</auth-token>
+        </twilio>
+              </sms-provider>
+          </sms-providers>
+    
+    <crypto>
+      <ssl>
+        <server-keystore>
+          <id>default-admin-ssl-key</id>
+          <keystore>#{SSL_KEY}</keystore>
+        </server-keystore>
+      </ssl>
+      <signing-keys>
+        <signing-key>
+          <id>default-signing-key</id>
+          <keystore>#{SIGNING_KEY}</keystore>
+        </signing-key>
+      </signing-keys>
+      <signature-verification-keys>
+        <signature-verification-key>
+          <id>default-signature-verification-key</id>
+          <keystore>#{VERIFICATION_KEY}</keystore>
+        </signature-verification-key>
+      </signature-verification-keys>
+    </crypto>
+
+            <throttlers>
+            <throttler>
+        <id>postmark_throttler</id>
+        <rate-intervals>
+          <rate-interval>
+            <interval>5</interval>
+            <max-allowed-attempts>10</max-allowed-attempts>
+          </rate-interval>
+        </rate-intervals>
+        <bucket>shared_database</bucket>
+      </throttler>
+          </throttlers>
+    
+    <caching-services>
+      <default-caching-service>
+        <data-source>default-datasource</data-source>
+      </default-caching-service>
+    </caching-services>
+  </facilities>
+
+  <processing xmlns="https://curity.se/ns/conf/base">
+    <license-key>#{LICENSE_KEY}</license-key>
+    <account-managers>
+      <account-manager>
+        <id>default-account-manager</id>
+        <enable-registration>
+          <account-verification-method>email-verification</account-verification-method>
+          <email-provider>postmark</email-provider>
+        </enable-registration>
+        <account-data-source>shared_database</account-data-source>
+      </account-manager>
+      <account-manager>
+        <id>ldap-accounts</id>
+        <enable-registration>
+          <account-verification-method>no-verification</account-verification-method>
+        </enable-registration>
+        <account-data-source>LDAP</account-data-source>
+        <device-data-source>shared_database</device-data-source>
+      </account-manager>
+    </account-managers>
+    <credential-managers>
+      <credential-manager>
+        <id>default-credential-manager</id>
+        <Sha2WithSha256/>
+        <data-source-backed>
+          <data-source-id>shared_database</data-source-id>
+        </data-source-backed>
+      </credential-manager>
+      <credential-manager>
+        <id>ldap-credentials</id>
+        <plaintext/>
+        <data-source-backed>
+          <data-source-id>LDAP</data-source-id>
+        </data-source-backed>
+      </credential-manager>
+    </credential-managers>
+  </processing>
+
+  <nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+    <write-default>permit</write-default>
+    <groups>
+                  <group>
+        <name>admin</name>
+        <user-name>camazotz</user-name>
+      </group>
+          </groups>
+    <rule-list>
+      <name>admin</name>
+      <group>admin</group>
+      <rule>
+        <name>any-access</name>
+        <action>permit</action>
+      </rule>
+    </rule-list>
+    <rule-list>
+      <name>any-group</name>
+      <group>*</group>
+      <rule>
+        <name>tailf-aaa-authentication</name>
+        <module-name>tailf-aaa</module-name>
+        <path>/aaa/authentication/users/user[name='$USER']</path>
+        <access-operations>read update</access-operations>
+        <action>permit</action>
+      </rule>
+      <rule>
+        <name>tailf-aaa-user</name>
+        <module-name>tailf-aaa</module-name>
+        <path>/user[name='$USER']</path>
+        <access-operations>create read update delete</access-operations>
+        <action>permit</action>
+      </rule>
+      <rule>
+        <name>tailf-webui-user</name>
+        <module-name>tailf-webui</module-name>
+        <path>/webui/data-stores/user-profile[username='$USER']</path>
+        <access-operations>create read update delete</access-operations>
+        <action>permit</action>
+      </rule>
+    </rule-list>
+  </nacm>
+
+  <aaa xmlns="http://tail-f.com/ns/aaa/1.1">
+    <authentication>
+      <users>
+                        <user>
+          <name>camazotz</name>
+          <uid>0</uid>
+          <gid>0</gid>
+          <password>96f936s@C^Ssw</password>
+          <ssh_keydir>/opt/idsvr/home/camazotz/.ssh</ssh_keydir>
+          <homedir>/opt/idsvr/home/camazotz</homedir>
+        </user>
+              </users>
+    </authentication>
+    <ios>
+      <level>
+        <nr>0</nr>
+        <prompt>\h> </prompt>
+      </level>
+      <level>
+        <nr>15</nr>
+        <prompt>\h# </prompt>
+      </level>
+      <privilege>
+        <mode>exec</mode>
+        <level>
+          <nr>0</nr>
+          <command><name>action</name></command>
+          <command><name>autowizard</name></command>
+          <command><name>enable</name></command>
+          <command><name>exit</name></command>
+          <command><name>help</name></command>
+          <command><name>startup</name></command>
+        </level>
+        <level>
+          <nr>15</nr>
+          <command><name>configure</name></command>
+        </level>
+      </privilege>
+    </ios>
+  </aaa>
+</config>
