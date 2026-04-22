@@ -223,12 +223,12 @@
     EOF
   no_log: true
 
-# - name: Verwijder tijdelijk gerenderd XML bestand
-#   ansible.builtin.file:
-#     path: "/tmp/curity-config-rendered-{{ env }}.xml"
-#     state: absent
-#   delegate_to: localhost
-#   become: false
+- name: Verwijder tijdelijk gerenderd XML bestand
+  ansible.builtin.file:
+    path: "/tmp/curity-config-rendered-{{ env }}.xml"
+    state: absent
+  delegate_to: localhost
+  become: false
 
 # - name: Pomp Curity XML config in Vault (als JSON)
 #   ansible.builtin.shell: |
