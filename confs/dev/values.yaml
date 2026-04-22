@@ -5,6 +5,11 @@ curity:
     cluster:
       enabled: true
     uiEnabled: true
+    persistentConfigVolume:
+      enabled: true
+      storageClass: "local-path"
+      accessModes: ReadWriteOnce
+      size: 1Gi
     configuration: 
       - secretRef:
           name: curity-config-secret

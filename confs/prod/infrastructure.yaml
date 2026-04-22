@@ -5,7 +5,7 @@ metadata:
   name: curity-db-ha
   namespace: curity-prod
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   instances: 3
   storage:
@@ -20,21 +20,6 @@ spec:
         configMapRefs:
           - name: curity-db-init-sql
             key: postgres-create_database.sql
-
-# --- Curity config store ---
----
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: curity-config-db
-  namespace: curity-prod
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-spec:
-  name: curity_config
-  owner: curityuser
-  cluster:
-    name: curity-db-ha
 
 # --- TEST APPLICATION DEPLOYMENT ---
 ---
