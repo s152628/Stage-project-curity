@@ -1,4 +1,3 @@
-replicaCount: 3
 curity:
   config:
     backup: true
@@ -39,6 +38,12 @@ curity:
         cpu: 500m
         memory: 512Mi
   runtime:
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
     env:
       - name: LOGGING_LEVEL
         value: "DEBUG"
