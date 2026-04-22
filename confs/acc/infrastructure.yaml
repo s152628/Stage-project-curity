@@ -5,7 +5,7 @@ metadata:
   name: curity-db-ha
   namespace: curity-acc
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   instances: 3
   storage:
@@ -27,6 +27,8 @@ kind: Database
 metadata:
   name: curity-config-db
   namespace: curity-acc
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   name: curity_config
   owner: curityuser
