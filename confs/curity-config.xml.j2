@@ -1,0 +1,707 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <environments xmlns="https://curity.se/ns/conf/base">
+    <environment>
+      <base-url>#{RUNTIME_BASE_URL}</base-url>
+      <cluster>
+        <keystore>#{CLUSTER_KEY}</keystore>
+        <host>#{ADMIN_SERVICE_HOST}</host>
+        <port>6789</port>
+      </cluster>
+      <admin-service>
+        <http>
+          <ssl-server-keystore>default-admin-ssl-key</ssl-server-keystore>
+          <web-ui>
+            <ui-modes>
+              <normal-mode>
+                <service-role>default</service-role>
+                <account-manager>default-account-manager</account-manager>
+                <credential-manager>default-credential-manager</credential-manager>
+              </normal-mode>
+            </ui-modes>
+          </web-ui>
+          <restconf>
+          </restconf>
+        </http>
+      </admin-service>
+      <themes>
+        <default-theme>
+          <theme-css-properties>#{THEME_CSS_PROPERTIES}</theme-css-properties>
+          <template-variables>
+            <name>_configured_cspImgsrc</name>
+            <value>#{LOGO_SOURCE}</value>
+          </template-variables>
+          <template-variables>
+            <name>_configured_logo_email_path</name>
+            <value>#{EMAIL_LOGO}</value>
+          </template-variables>
+          <template-variables>
+            <name>_configured_logo_path</name>
+            <value>#{LOGO}</value>
+          </template-variables>
+        </default-theme>
+      </themes>
+      <services>
+        <zones>
+          <default-zone>
+            <symmetric-key>#{SYMMETRIC_KEY}</symmetric-key>
+          </default-zone>
+        </zones>
+        <service-role>
+          <id>default</id>
+          <protocol>https</protocol>
+          <ssl-server-keystore>default-admin-ssl-key</ssl-server-keystore>
+          <webfinger/>
+          <endpoints>applications</endpoints>
+          <endpoints>authentication-service-anonymous</endpoints>
+          <endpoints>authentication-service-authentication</endpoints>
+          <endpoints>authentication-service-registration</endpoints>
+          <endpoints>token-service-anonymous</endpoints>
+          <endpoints>token-service-assisted-token</endpoints>
+          <endpoints>token-service-authorize</endpoints>
+          <endpoints>token-service-introspect</endpoints>
+          <endpoints>token-service-revoke</endpoints>
+          <endpoints>token-service-session</endpoints>
+          <endpoints>token-service-token</endpoints>
+          <endpoints>token-service-userinfo</endpoints>
+        </service-role>
+      </services>
+    </environment>
+  </environments>
+
+  <profiles xmlns="https://curity.se/ns/conf/base">
+    <profile>
+      <id>Applications</id>
+      <type xmlns:apps="https://curity.se/ns/conf/profile/apps">apps:apps-service</type>
+      <settings>
+        <apps-service xmlns="https://curity.se/ns/conf/profile/apps">
+          <oauth-profile-id>token-service</oauth-profile-id>
+        </apps-service>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>applications</id>
+          <uri>/apps</uri>
+          <endpoint-kind>apps-anonymous</endpoint-kind>
+        </endpoint>
+      </endpoints>
+    </profile>
+
+    <profile>
+      <id>authentication-service</id>
+      <type xmlns:auth="https://curity.se/ns/conf/profile/authentication">auth:authentication-service</type>
+      <settings>
+        <authentication-service xmlns="https://curity.se/ns/conf/profile/authentication">
+{%- set active_sms_auth = authenticators | selectattr('type', 'equalto', 'sms') | selectattr('enabled', 'equalto', true) | list %}
+{%- if active_sms_auth | length > 0 %}
+{%- set sms_provider = providers.sms_providers | selectattr('enabled', 'equalto', true) | first %}
+          <sms-provider>{{ sms_provider.id }}</sms-provider>
+{%- endif %}
+{%- set mfa_authenticators = authenticators | selectattr('mfa_second_factor', 'defined') | list %}
+{%- if mfa_authenticators | length > 0 %}
+          <authentication-actions>
+            <authentication-action>
+              <id>MFA</id>
+              <multi-factor-condition xmlns="https://curity.se/ns/ext-conf/multi-factor-condition">
+                <always>
+                  <second-factor>
+                    <id>{{ mfa_authenticators[0].mfa_second_factor }}</id>
+                  </second-factor>
+                </always>
+              </multi-factor-condition>
+            </authentication-action>
+          </authentication-actions>
+{%- endif %}
+          <authenticators>
+{%- for auth in authenticators %}
+{%- if auth.enabled %}
+{%- if auth.type == 'html_form' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+{%- if auth.mfa_action is defined %}
+              <authentication-actions>
+                <login>{{ auth.mfa_action }}</login>
+              </authentication-actions>
+{%- endif %}
+              <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
+                <account-manager>{{ auth.account_manager }}</account-manager>
+                <credential-manager>{{ auth.credential_manager }}</credential-manager>
+{%- if auth.email_provider is defined %}
+                <email-provider>{{ auth.email_provider }}</email-provider>
+{%- endif %}
+              </html-form>
+            </authenticator>
+{%- elif auth.type == 'email' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+              <email>
+                <account-manager>{{ auth.account_manager }}</account-manager>
+                <email-provider>
+                  <id>{{ auth.email_provider }}</id>
+                </email-provider>
+{%- if auth.throttler is defined %}
+                <throttler-service>
+                  <throttler>{{ auth.throttler }}</throttler>
+                </throttler-service>
+{%- endif %}
+              </email>
+            </authenticator>
+{%- elif auth.type == 'sms' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+              <sms>
+                <account-manager>{{ auth.account_manager }}</account-manager>
+                <send-otp-as-code>{{ auth.send_otp_as_code | default(true) | lower }}</send-otp-as-code>
+                <allow-registration-during-login>{{ auth.allow_registration | default(false) | lower }}</allow-registration-during-login>
+                <auto-login-enabled>{{ auth.auto_login | default(false) | lower }}</auto-login-enabled>
+              </sms>
+            </authenticator>
+{%- elif auth.type == 'totp' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+{%- if auth.required_authenticator is defined %}
+              <required-authenticator-for-registration>{{ auth.required_authenticator }}</required-authenticator-for-registration>
+{%- endif %}
+              <totp xmlns="https://curity.se/ns/ext-conf/totp">
+                <account-manager>
+                  <id>{{ auth.account_manager }}</id>
+                </account-manager>
+                <bucket>
+                  <data-source>{{ auth.data_source }}</data-source>
+                </bucket>
+                <auto-redirect-enabled>{{ auth.auto_redirect | default(true) | lower }}</auto-redirect-enabled>
+                <generated-key-config>
+                  <bucket>
+                    <data-source>{{ auth.data_source }}</data-source>
+                  </bucket>
+                </generated-key-config>
+              </totp>
+            </authenticator>
+{%- elif auth.type == 'passkey' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+{%- if auth.required_authenticator is defined %}
+              <required-authenticator-for-registration>{{ auth.required_authenticator }}</required-authenticator-for-registration>
+{%- endif %}
+              <passkeys xmlns="https://curity.se/ns/conf/authenticators/passkeys">
+                <account-manager>
+                  <id>{{ auth.account_manager }}</id>
+                </account-manager>
+              </passkeys>
+            </authenticator>
+{%- elif auth.type == 'google' %}
+            <authenticator>
+              <id>{{ auth.id }}</id>
+              <google xmlns="https://curity.se/ns/conf/authenticators/google">
+                <client-id>#{GOOGLE_CLIENT_ID}</client-id>
+                <client-secret>#{GOOGLE_CLIENT_SECRET}</client-secret>
+              </google>
+            </authenticator>
+{%- endif %}
+{%- endif %}
+{%- endfor %}
+          </authenticators>
+
+          <protocols>
+            <protocol>
+              <id>default-simple-protocol</id>
+              <simple-api/>
+            </protocol>
+          </protocols>
+
+        </authentication-service>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>authentication-service-anonymous</id>
+          <uri>/authn/anonymous</uri>
+          <endpoint-kind>auth-anonymous</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>authentication-service-authentication</id>
+          <uri>/authn/authentication</uri>
+          <endpoint-kind>auth-authentication</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>authentication-service-registration</id>
+          <uri>/authn/registration</uri>
+          <endpoint-kind>auth-registration</endpoint-kind>
+        </endpoint>
+      </endpoints>
+      <token-issuers>
+        <default-token-issuer>
+          <jwt-issuer-settings>
+            <signing-key-id>default-signing-key</signing-key-id>
+          </jwt-issuer-settings>
+          <default-data-source>default-datasource</default-data-source>
+        </default-token-issuer>
+      </token-issuers>
+    </profile>
+
+    <profile>
+      <id>token-service</id>
+      <type xmlns:as="https://curity.se/ns/conf/profile/oauth">as:oauth-service</type>
+      <settings>
+        <authorization-server xmlns="https://curity.se/ns/conf/profile/oauth">
+          <authentication-service>
+            <authentication-profile>authentication-service</authentication-profile>
+          </authentication-service>
+          <client-capabilities>
+            <code>
+            </code>
+            <implicit/>
+            <resource-owner-password-credentials>
+              <credential-manager>default-credential-manager</credential-manager>
+            </resource-owner-password-credentials>
+            <client-credentials/>
+            <introspection/>
+            <token-exchange/>
+            <assisted-token>
+            </assisted-token>
+          </client-capabilities>
+          <scopes>
+{%- for scope in scopes | sort(attribute='id') %}
+            <scope>
+              <id>{{ scope.id }}</id>
+              <description>{{ scope.description }}</description>
+{%- for claim in scope.claims | default([]) | sort %}
+              <claims>{{ claim }}</claims>
+{%- endfor %}
+            </scope>
+{%- endfor %}
+          </scopes>
+{%- set all_claims = [] %}
+{%- for scope in scopes %}
+{%- for claim in scope.claims | default([]) %}
+{%- if claim not in all_claims %}
+{%- set _ = all_claims.append(claim) %}
+{%- endif %}
+{%- endfor %}
+{%- endfor %}
+{%- set all_claims = all_claims | sort %}
+          <claims>
+{%- for claim in all_claims %}
+            <claim>
+              <name>{{ claim }}</name>
+              <description>OpenID Connect {{ claim }} claim</description>
+              <value-provided-by>account-manager-claims-provider</value-provided-by>
+            </claim>
+{%- endfor %}
+            <claims-value-provider>
+              <id>account-manager-claims-provider</id>
+              <account-manager-claims-provider xmlns="https://curity.se/ns/ext-conf/account-manager-claims-provider">
+                <account-manager>
+                  <id>default-account-manager</id>
+                </account-manager>
+              </account-manager-claims-provider>
+            </claims-value-provider>
+            <claims-mappers>
+              <claims-mapper>
+                <id>default</id>
+                <id_token>
+{%- for claim in all_claims %}
+                  <claim>{{ claim }}</claim>
+{%- endfor %}
+                </id_token>
+                <userinfo>
+{%- for claim in all_claims %}
+                  <claim>{{ claim }}</claim>
+{%- endfor %}
+                </userinfo>
+              </claims-mapper>
+              <default-claims-mapper>default</default-claims-mapper>
+            </claims-mappers>
+          </claims>
+
+          <openid-connect>
+            <expose-metadata>
+            </expose-metadata>
+          </openid-connect>
+
+          {# Clients — volledig dynamisch op basis van clients.yml #}
+          <client-store>
+            <config-backed>
+{%- for client in clients %}
+              <client>
+                <id>{{ client.id }}</id>
+                <secret>{{ client.secret }}</secret>
+{%- if client.type == 'code' %}
+{%- for uri in client.redirect_uris %}
+                <redirect-uris>{{ uri }}</redirect-uris>
+{%- endfor %}
+{%- for scope in client.scopes | default(['openid']) %}
+                <scope>{{ scope }}</scope>
+{%- endfor %}
+                <user-authentication>
+{%- for auth in client.allowed_authenticators %}
+                  <allowed-authenticators>{{ auth }}</allowed-authenticators>
+{%- endfor %}
+                </user-authentication>
+{%- if client.allowed_origins is defined %}
+{%- for origin in client.allowed_origins %}
+                <allowed-origins>{{ origin }}</allowed-origins>
+{%- endfor %}
+{%- endif %}
+                <capabilities>
+                  <code/>
+                </capabilities>
+{%- if client.validate_port is defined %}
+                <validate-port-on-loopback-interfaces>{{ client.validate_port | lower }}</validate-port-on-loopback-interfaces>
+{%- endif %}
+{%- elif client.type == 'introspection' %}
+                <capabilities>
+                  <introspection/>
+                </capabilities>
+{%- elif client.type == 'client_credentials' %}
+{%- if client.scopes is defined %}
+{%- for scope in client.scopes %}
+                <scope>{{ scope }}</scope>
+{%- endfor %}
+{%- endif %}
+                <capabilities>
+                  <client-credentials/>
+                </capabilities>
+{%- elif client.type == 'token_exchange' %}
+                <capabilities>
+                  <token-exchange/>
+                </capabilities>
+{%- endif %}
+              </client>
+{%- endfor %}
+            </config-backed>
+          </client-store>
+
+        </authorization-server>
+      </settings>
+      <endpoints>
+        <endpoint>
+          <id>token-service-anonymous</id>
+          <uri>/oauth/v2/oauth-anonymous</uri>
+          <endpoint-kind>oauth-anonymous</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-assisted-token</id>
+          <uri>/oauth/v2/oauth-assisted-token</uri>
+          <endpoint-kind>oauth-assisted-token</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-authorize</id>
+          <uri>/oauth/v2/oauth-authorize</uri>
+          <endpoint-kind>oauth-authorize</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-introspect</id>
+          <uri>/oauth/v2/oauth-introspect</uri>
+          <endpoint-kind>oauth-introspect</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-revoke</id>
+          <uri>/oauth/v2/oauth-revoke</uri>
+          <endpoint-kind>oauth-revoke</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-session</id>
+          <uri>/oauth/v2/oauth-session</uri>
+          <endpoint-kind>oauth-session</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-token</id>
+          <uri>/oauth/v2/oauth-token</uri>
+          <endpoint-kind>oauth-token</endpoint-kind>
+        </endpoint>
+        <endpoint>
+          <id>token-service-userinfo</id>
+          <uri>/oauth/v2/oauth-userinfo</uri>
+          <endpoint-kind>oauth-userinfo</endpoint-kind>
+        </endpoint>
+      </endpoints>
+      <token-issuers>
+        <default-token-issuer>
+          <jwt-issuer-settings>
+            <signing-key-id>default-signing-key</signing-key-id>
+          </jwt-issuer-settings>
+          <default-data-source>shared_database</default-data-source>
+        </default-token-issuer>
+      </token-issuers>
+    </profile>
+  </profiles>
+
+  <facilities xmlns="https://curity.se/ns/conf/base">
+    <data-sources>
+{%- for ds in datasources %}
+{%- if ds.type == 'ldap' %}
+      <data-source>
+        <id>{{ ds.id }}</id>
+        <ldap xmlns="https://curity.se/ns/conf/data-access/ldap">
+          <hostname>#{LDAP_HOSTNAME}</hostname>
+          <port>#{LDAP_PORT}</port>
+          <client-id>#{LDAP_CLIENT_ID}</client-id>
+          <client-secret>#{LDAP_CLIENT_SECRET}</client-secret>
+          <default-root>#{LDAP_DEFAULT_ROOT}</default-root>
+          <account>
+{%- for attr in ds.account_attributes | default(['objectClass', 'mail', 'uid', 'telephoneNumber']) %}
+            <ldap-attribute-to-fetch>{{ attr }}</ldap-attribute-to-fetch>
+{%- endfor %}
+            <account-id-attribute>{{ ds.account_id_attribute | default('uid') }}</account-id-attribute>
+            <username-attribute>{{ ds.username_attribute | default('uid') }}</username-attribute>
+            <search-filter-account-id>({{ ds.account_id_attribute | default('uid') }}={})</search-filter-account-id>
+            <search-filter-username>({{ ds.username_attribute | default('uid') }}={})</search-filter-username>
+            <search-filter-mail>(mail={})</search-filter-mail>
+            <active-state-attribute>objectClass</active-state-attribute>
+            <active-state-attribute-value>inetOrgPerson</active-state-attribute-value>
+            <email-attribute>mail</email-attribute>
+          </account>
+          <attributes>
+{%- for attr in ds.attributes | default(['mail', 'uid', 'telephoneNumber']) %}
+            <ldap-attribute-to-fetch>{{ attr }}</ldap-attribute-to-fetch>
+{%- endfor %}
+          </attributes>
+          <credentials>
+            <use-attribute-replacement>
+            <password-encoding>{{ ds.password_encoding | default('ssha') }}</password-encoding>
+            </use-attribute-replacement>
+{%- for attr in ds.credential_attributes | default(['mail', 'uid', 'telephoneNumber']) %}
+            <ldap-attribute-to-fetch>{{ attr }}</ldap-attribute-to-fetch>
+{%- endfor %}
+          </credentials>
+        </ldap>
+      </data-source>
+{%- elif ds.type == 'jdbc' %}
+      <data-source>
+        <id>{{ ds.id }}</id>
+        <jdbc xmlns="https://curity.se/ns/ext-conf/jdbc">
+          <connection-string>{{ ds.connection_string }}</connection-string>
+          <standard-credentials-mode>
+          </standard-credentials-mode>
+          <driver>{{ ds.driver }}</driver>
+          <password>{{ ds.password }}</password>
+          <username>{{ ds.username }}</username>
+        </jdbc>
+      </data-source>
+{%- endif %}
+{%- endfor %}
+    </data-sources>
+
+{%- if providers.email_providers is defined and providers.email_providers | length > 0 %}
+    <email-providers>
+{%- for ep in providers.email_providers %}
+      <email-provider>
+        <id>{{ ep.id }}</id>
+        <smtp>
+          <smtp-host>#{SMTP_HOST}</smtp-host>
+          <smtp-port>#{SMTP_PORT}</smtp-port>
+          <enable-tls>{{ ep.tls | default(true) | lower }}</enable-tls>
+          <tls>
+            <start-tls/>
+          </tls>
+          <default-sender>#{SMTP_DEFAULT_SENDER}</default-sender>
+          <username>#{SMTP_USERNAME}</username>
+          <password>#{SMTP_PASSWORD}</password>
+        </smtp>
+      </email-provider>
+{%- endfor %}
+    </email-providers>
+{%- endif %}
+{%- set active_sms = providers.sms_providers | default([]) | selectattr('enabled', 'equalto', true) | list %}
+{%- if active_sms | length > 0 %}
+    <sms-providers>
+{%- for sp in active_sms %}
+      <sms-provider>
+        <id>{{ sp.id }}</id>
+{%- if sp.type == 'twilio' %}
+        <twilio>
+          <from-number>#{TWILIO_NUMBER}</from-number>
+          <account-sid>#{TWILIO_SID}</account-sid>
+          <auth-token>#{TWILIO_TOKEN}</auth-token>
+        </twilio>
+{%- endif %}
+      </sms-provider>
+{%- endfor %}
+    </sms-providers>
+{%- endif %}
+
+    <crypto>
+      <ssl>
+        <server-keystore>
+          <id>default-admin-ssl-key</id>
+          <keystore>#{SSL_KEY}</keystore>
+        </server-keystore>
+      </ssl>
+      <signing-keys>
+        <signing-key>
+          <id>default-signing-key</id>
+          <keystore>#{SIGNING_KEY}</keystore>
+        </signing-key>
+      </signing-keys>
+      <signature-verification-keys>
+        <signature-verification-key>
+          <id>default-signature-verification-key</id>
+          <keystore>#{VERIFICATION_KEY}</keystore>
+        </signature-verification-key>
+      </signature-verification-keys>
+    </crypto>
+
+{%- if throttlers is defined and throttlers | length > 0 %}
+    <throttlers>
+{%- for t in throttlers %}
+      <throttler>
+        <id>{{ t.id }}</id>
+        <rate-intervals>
+          <rate-interval>
+            <interval>{{ t.interval }}</interval>
+            <max-allowed-attempts>{{ t.max_attempts }}</max-allowed-attempts>
+          </rate-interval>
+        </rate-intervals>
+        <bucket>{{ t.datasource }}</bucket>
+      </throttler>
+{%- endfor %}
+    </throttlers>
+{%- endif %}
+
+    <caching-services>
+      <default-caching-service>
+        <data-source>default-datasource</data-source>
+      </default-caching-service>
+    </caching-services>
+  </facilities>
+
+  <processing xmlns="https://curity.se/ns/conf/base">
+    <license-key>#{LICENSE_KEY}</license-key>
+    <account-managers>
+      <account-manager>
+        <id>default-account-manager</id>
+        <enable-registration>
+          <account-verification-method>email-verification</account-verification-method>
+          <email-provider>postmark</email-provider>
+        </enable-registration>
+        <account-data-source>shared_database</account-data-source>
+      </account-manager>
+      <account-manager>
+        <id>ldap-accounts</id>
+        <enable-registration>
+          <account-verification-method>no-verification</account-verification-method>
+        </enable-registration>
+        <account-data-source>LDAP</account-data-source>
+        <device-data-source>shared_database</device-data-source>
+      </account-manager>
+    </account-managers>
+    <credential-managers>
+      <credential-manager>
+        <id>default-credential-manager</id>
+        <Sha2WithSha256>
+        </Sha2WithSha256>
+        <data-source-backed>
+          <data-source-id>shared_database</data-source-id>
+        </data-source-backed>
+      </credential-manager>
+      <credential-manager>
+        <id>ldap-credentials</id>
+        <plaintext/>
+        <data-source-backed>
+          <data-source-id>LDAP</data-source-id>
+        </data-source-backed>
+      </credential-manager>
+    </credential-managers>
+  </processing>
+
+  <nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+    <write-default>permit</write-default>
+    <groups>
+{%- for user in admin_users %}
+      <group>
+        <name>admin</name>
+        <user-name>{{ user.username }}</user-name>
+      </group>
+{%- endfor %}
+    </groups>
+    <rule-list>
+      <name>admin</name>
+      <group>admin</group>
+      <rule>
+        <name>any-access</name>
+        <action>permit</action>
+      </rule>
+    </rule-list>
+    <rule-list>
+      <name>any-group</name>
+      <group>*</group>
+      <rule>
+        <name>tailf-aaa-authentication</name>
+        <module-name>tailf-aaa</module-name>
+        <path>/aaa/authentication/users/user[name='$USER']</path>
+        <access-operations>read update</access-operations>
+        <action>permit</action>
+      </rule>
+      <rule>
+        <name>tailf-aaa-user</name>
+        <module-name>tailf-aaa</module-name>
+        <path>/user[name='$USER']</path>
+        <access-operations>create read update delete</access-operations>
+        <action>permit</action>
+      </rule>
+      <rule>
+        <name>tailf-webui-user</name>
+        <module-name>tailf-webui</module-name>
+        <path>/webui/data-stores/user-profile[username='$USER']</path>
+        <access-operations>create read update delete</access-operations>
+        <action>permit</action>
+      </rule>
+    </rule-list>
+  </nacm>
+
+  <aaa xmlns="http://tail-f.com/ns/aaa/1.1">
+    <authentication>
+      <users>
+{%- for user in admin_users %}
+        <user>
+          <name>{{ user.username }}</name>
+          <uid>0</uid>
+          <gid>0</gid>
+          <password>{{ user.password }}</password>
+          <ssh_keydir>/opt/idsvr/home/{{ user.username }}/.ssh</ssh_keydir>
+          <homedir>/opt/idsvr/home/{{ user.username }}</homedir>
+        </user>
+{%- endfor %}
+      </users>
+    </authentication>
+    <ios>
+      <level>
+        <nr>0</nr>
+        <prompt>\h> </prompt>
+      </level>
+      <level>
+        <nr>15</nr>
+        <prompt>\h# </prompt>
+      </level>
+      <privilege>
+        <mode>exec</mode>
+        <level>
+          <nr>0</nr>
+          <command>
+            <name>action</name>
+          </command>
+          <command>
+            <name>autowizard</name>
+          </command>
+          <command>
+            <name>enable</name>
+          </command>
+          <command>
+            <name>exit</name>
+          </command>
+          <command>
+            <name>help</name>
+          </command>
+          <command>
+            <name>startup</name>
+          </command>
+        </level>
+        <level>
+          <nr>15</nr>
+          <command>
+            <name>configure</name>
+          </command>
+        </level>
+      </privilege>
+    </ios>
+  </aaa>
+</config>

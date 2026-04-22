@@ -108,6 +108,143 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 | LOGO | Het pad naar het logo dat in de browser getoond wordt. |
 | LOGO_SOURCE | De bron-URL of Content Security Policy (CSP) instelling voor afbeeldingen (bijv. self). |
 
+#### {{ local_secret_path }}/{dev|acc|prod}/curity.yml
+
+Variabelen die moeten worden ingevuld in de XML-template.
+
+```yaml
+# -----------------------------------------------------------------------------
+# Admin gebruikers
+# -----------------------------------------------------------------------------
+admin_users:
+  - username: "<ADMIN_USERNAME>"   # Username voor de Curity admin user (bv. admin)
+    password: "<ADMIN_PASSWORD>"   # Sterk wachtwoord of via Vault injectie
+
+# -----------------------------------------------------------------------------
+# Clients (OAuth/OpenID clients)
+# -----------------------------------------------------------------------------
+clients:
+  - id: "<CLIENT_ID>"              # Unieke identifier van de client (bv. gateway)
+    secret: "<CLIENT_SECRET>"      # Secret voor client authenticatie (Vault of env)
+    type: "<CLIENT_TYPE>"          # Mogelijke waarden:
+                                  # - introspection (machine-to-machine)
+                                  # - code (authorization code flow)
+
+  - id: "<WEB_CLIENT_ID>"          # bv. www
+    secret: "<WEB_CLIENT_SECRET>"
+    type: "code"
+
+    redirect_uris:
+      - "<CALLBACK_URL>"           # URL waar de gebruiker na login terugkomt
+
+    allowed_origins:
+      - "<FRONTEND_BASE_URL>"      # Frontend origin (CORS)
+
+    scopes:
+      - "<SCOPE_NAME>"             # bv. openid, profile, email
+
+    allowed_authenticators:
+      - "<AUTHENTICATOR_ID>"       # Moet matchen met authenticators hieronder
+
+    validate_port: "<true|false>"  # Of redirect URI poort moet matchen
+
+# -----------------------------------------------------------------------------
+# Authenticators (login methodes)
+# -----------------------------------------------------------------------------
+authenticators:
+  - id: "<AUTH_ID>"                # Unieke naam (bv. username_password)
+    type: "<AUTH_TYPE>"            # Mogelijke types:
+                                  # - html_form
+                                  # - email
+                                  # - sms
+                                  # - totp
+                                  # - passkey
+                                  # - google
+
+    enabled: <true|false>          # Of deze authenticator actief is
+
+    account_manager: "<ACCOUNT_MANAGER_ID>"     # bv. ldap-accounts
+    credential_manager: "<CREDENTIAL_MANAGER>"  # enkel nodig voor password flows
+
+    email_provider: "<EMAIL_PROVIDER_ID>"       # vereist bij email flows
+    throttler: "<THROTTLER_ID>"                 # rate limiting (optioneel)
+
+    mfa_action: "<MFA_ACTION>"                  # bv. MFA
+    mfa_second_factor: "<AUTH_ID>"              # tweede factor
+
+    send_otp_as_code: <true|false>              # voor SMS/email
+    allow_registration: <true|false>
+    auto_login: <true|false>
+
+    data_source: "<DATASOURCE_ID>"              # voor TOTP/passkey
+    auto_redirect: <true|false>
+    required_authenticator: "<AUTH_ID>"         # chaining van authenticators
+
+# -----------------------------------------------------------------------------
+# Scopes en claims (OpenID Connect)
+# -----------------------------------------------------------------------------
+scopes:
+  - id: "<SCOPE_ID>"               # bv. openid, profile, email
+    description: "<DESCRIPTION>"   # Beschrijving van de scope
+
+    claims:
+      - "<CLAIM_NAME>"             # bv. email, name, given_name
+
+# -----------------------------------------------------------------------------
+# Datasources (user storage / DB connecties)
+# -----------------------------------------------------------------------------
+datasources:
+  - id: "<DATASOURCE_ID>"          # bv. LDAP
+    type: "ldap"
+
+    account_attributes:
+      - "<ATTRIBUTE>"              # bv. uid, mail
+
+    attributes:
+      - "<ATTRIBUTE>"
+
+    credential_attributes:
+      - "<ATTRIBUTE>"
+
+    account_id_attribute: "<ATTRIBUTE>"   # unieke identifier (bv. uid)
+    username_attribute: "<ATTRIBUTE>"     # login veld
+
+    password_encoding: "<ENCODING>"       # bv. ssha
+
+  - id: "<JDBC_DATASOURCE_ID>"
+    type: "jdbc"
+
+    connection_string: "<DB_CONNECTION_STRING>"   # bv. jdbc:postgresql://host:5432/db
+    driver: "<JDBC_DRIVER_CLASS>"                 # bv. org.postgresql.Driver
+    username: "<DB_USERNAME>"
+    password: "<DB_PASSWORD>"
+
+# -----------------------------------------------------------------------------
+# Providers (email & SMS)
+# -----------------------------------------------------------------------------
+providers:
+  email_providers:
+    - id: "<EMAIL_PROVIDER_ID>"    # bv. postmark
+      type: "<EMAIL_TYPE>"         # meestal smtp
+      tls: <true|false>
+
+  sms_providers:
+    - id: "<SMS_PROVIDER_ID>"      # bv. Twilio
+      type: "twilio"
+      enabled: <true|false>
+
+# -----------------------------------------------------------------------------
+# Throttlers (rate limiting)
+# -----------------------------------------------------------------------------
+throttlers:
+  - id: "<THROTTLER_ID>"           # bv. postmark_throttler
+
+    interval: <SECONDS>            # tijdsvenster (bv. 5)
+    max_attempts: <NUMBER>         # max aantal pogingen (bv. 3)
+
+    datasource: "<DATASOURCE_ID>"  # DB voor opslag (bv. shared_database)
+```
+
 
 #### users.json formaat
 ```json
