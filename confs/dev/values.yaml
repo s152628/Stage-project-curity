@@ -1,6 +1,7 @@
 replicaCount: 3
 curity:
   config:
+    backup: true
     license: true
     cluster:
       enabled: true
