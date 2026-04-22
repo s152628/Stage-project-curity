@@ -20,7 +20,18 @@ spec:
         configMapRefs:
           - name: curity-db-init-sql
             key: postgres-create_database.sql
-
+# --- Curity config store ---
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: curity-config-db
+  namespace: curity-dev
+spec:
+  name: curity_config
+  owner: curityuser
+  cluster:
+    name: curity-db-ha
 # --- TEST APPLICATION DEPLOYMENT ---
 ---
 apiVersion: apps/v1
