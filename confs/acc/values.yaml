@@ -30,7 +30,7 @@ curity:
         cpu: 1000m
         memory: 2Gi
       requests:
-        cpu: 50m
+        cpu: 500m
         memory: 1Gi
   runtime:
     livenessProbe:
@@ -46,7 +46,7 @@ curity:
         cpu: 500m
         memory: 2Gi
       requests:
-        cpu: 50m
+        cpu: 500m
         memory: 1Gi
     service:
       type: ClusterIP
