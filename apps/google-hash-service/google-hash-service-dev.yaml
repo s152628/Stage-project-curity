@@ -67,7 +67,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              source /vault/secrets/env
+              . /vault/secrets/env
               exec gunicorn --bind 0.0.0.0:8080 --workers 2 google_hash_service:app
           livenessProbe:
             httpGet:
