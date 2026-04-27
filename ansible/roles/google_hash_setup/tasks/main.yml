@@ -1,0 +1,28 @@
+- name: Wacht tot OpenLDAP beschikbaar is
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
+      --namespace curity-{{ env }} \
+      --for=condition=Ready pod/openldap-0 \
+      --timeout=300s
+  changed_when: false
+
+- name: Kopieer custom LDAP schema naar de OpenLDAP pod
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml cp \
+      {{ role_path }}/files/google-identity-schema.ldif \
+      curity-{{ env }}/openldap-0:/tmp/google-identity-schema.ldif
+
+- name: Laad custom LDAP schema in (idempotent)
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/google-identity-schema.ldif
+  register: schema_result
+  # 80 = schema bestaat al (Already exists) — idempotent
+  failed_when: schema_result.rc not in [0, 80]
+  changed_when: schema_result.rc == 0
+
+- name: Verwijder tijdelijk schemabestand uit de pod
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      rm /tmp/google-identity-schema.ldif
+  changed_when: false
