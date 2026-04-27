@@ -1,0 +1,97 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: google-hash-service
+  namespace: curity-dev
+  labels:
+    app: google-hash-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: google-hash-service
+  template:
+    metadata:
+      labels:
+        app: google-hash-service
+      annotations:
+        # Vault Agent injectie — haalt de pepper en LDAP credentials op
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "google-hash-service"
+        vault.hashicorp.com/agent-inject-secret-env: "secret/dev/google-hash-service/vars"
+        vault.hashicorp.com/agent-inject-template-env: |
+          {{`{{- with secret "secret/`}}dev{{`/google-hash-service/vars" -}}`}}
+          export GOOGLE_HASH_PEPPER="{{ `{{.Data.data.pepper}}` }}"
+          export LDAP_ADMIN_PASSWORD="{{ `{{.Data.data.ldap_admin_password}}` }}"
+          {{`{{- end }}`}}
+    spec:
+      serviceAccountName: google-hash-service-sa
+      containers:
+        - name: google-hash-service
+          image: camazotz01/google-hash-service:latest 
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: LDAP_HOST
+              value: "openldap-service"
+            - name: LDAP_PORT
+              value: "389"
+            - name: LDAP_ADMIN_DN
+              value: "cn=admin,dc=camazotz,dc=me"
+            - name: LDAP_BASE_DN
+              value: "dc=camazotz,dc=me"
+          # GOOGLE_HASH_PEPPER en LDAP_ADMIN_PASSWORD komen via Vault Agent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              source /vault/secrets/env
+              exec gunicorn --bind 0.0.0.0:8080 --workers 2 google_hash_service:app
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: google-hash-service
+  namespace: curity-dev
+spec:
+  selector:
+    app: google-hash-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: google-hash-service-sa
+  namespace: curity-dev
+  annotations:
+    vault.hashicorp.com/role: "google-hash-service"
