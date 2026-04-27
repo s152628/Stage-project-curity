@@ -1,3 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: google-hash-service-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/s152628/Stage-project-curity.git'
+    targetRevision: HEAD
+    path: 'apps/google-hash-service'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: curity-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -16,12 +39,11 @@ spec:
       labels:
         app: google-hash-service
       annotations:
-        # Vault Agent injectie — haalt de pepper en LDAP credentials op
         vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "google-hash-service"
+        vault.hashicorp.com/role: "google-hash-service-dev"
         vault.hashicorp.com/agent-inject-secret-env: "secret/dev/google-hash-service/vars"
         vault.hashicorp.com/agent-inject-template-env: |
-          {{`{{- with secret "secret/`}}dev{{`/google-hash-service/vars" -}}`}}
+          {{`{{- with secret "secret/dev/google-hash-service/vars" -}}`}}
           export GOOGLE_HASH_PEPPER="{{ `{{.Data.data.pepper}}` }}"
           export LDAP_ADMIN_PASSWORD="{{ `{{.Data.data.ldap_admin_password}}` }}"
           {{`{{- end }}`}}
@@ -29,7 +51,7 @@ spec:
       serviceAccountName: google-hash-service-sa
       containers:
         - name: google-hash-service
-          image: camazotz01/google-hash-service:latest 
+          image: camazotz01/google-hash-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -42,7 +64,6 @@ spec:
               value: "cn=admin,dc=camazotz,dc=me"
             - name: LDAP_BASE_DN
               value: "dc=camazotz,dc=me"
-          # GOOGLE_HASH_PEPPER en LDAP_ADMIN_PASSWORD komen via Vault Agent
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -70,7 +91,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             allowPrivilegeEscalation: false
 
 ---
@@ -94,4 +115,4 @@ metadata:
   name: google-hash-service-sa
   namespace: curity-dev
   annotations:
-    vault.hashicorp.com/role: "google-hash-service"
+    vault.hashicorp.com/role: "google-hash-service-dev"
