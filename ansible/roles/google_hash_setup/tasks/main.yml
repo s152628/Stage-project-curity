@@ -6,10 +6,15 @@
       --timeout=300s
   changed_when: false
 
+- name: kopieer custom LDAP schema naar de VM
+  copy:
+    src: google-identity-schema.ldif
+    dest: /tmp/google-identity-schema.ldif
+
 - name: Kopieer custom LDAP schema naar de OpenLDAP pod
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml cp \
-      {{ role_path }}/files/google-identity-schema.ldif \
+      /tmp/google-identity-schema.ldif \
       curity-{{ env }}/openldap-0:/tmp/google-identity-schema.ldif
 
 - name: Laad custom LDAP schema in (idempotent)
