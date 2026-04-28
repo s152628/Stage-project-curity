@@ -13,5 +13,4 @@
     - tailscale_k8s_bridge
     - deploy_env
     - LDAP_setup
-    - google_hash_setup
     - monitoring
