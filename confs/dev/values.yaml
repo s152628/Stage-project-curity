@@ -24,10 +24,6 @@ curity:
     environmentVariableSecrets:
      - curity-cluster-secret
      - curity-vars
-  extraVolumes:
-    - name: google-ldap-link-plugin
-      persistentVolumeClaim:
-        claimName: curity-plugin-pvc
   admin:
     livenessProbe:
       initialDelaySeconds: 30
@@ -46,6 +42,10 @@ curity:
       requests:
         cpu: 250m
         memory: 512Mi
+    extraVolumes:
+      - name: google-ldap-link-plugin
+        persistentVolumeClaim:
+          claimName: curity-plugin-pvc
     extraVolumeMounts:
       - name: google-ldap-link-plugin
         mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
@@ -76,6 +76,10 @@ curity:
         - name: metrics
           port: 4466
           targetPort: 4466
+    extraVolumes:
+      - name: google-ldap-link-plugin
+        persistentVolumeClaim:
+          claimName: curity-plugin-pvc
     extraVolumeMounts:
       - name: google-ldap-link-plugin
         mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
