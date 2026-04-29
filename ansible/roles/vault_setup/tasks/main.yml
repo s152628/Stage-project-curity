@@ -241,21 +241,6 @@
   when: pepper_exists.stdout.strip() != "0"
   no_log: true
 
-- name: Voeg GOOGLE_LDAP_PEPPER en LDAP_ADMIN_PASSWORD toe aan Curity vars
-  ansible.builtin.shell: |
-    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
-    export VAULT_ADDR='http://127.0.0.1:8200'
-    export VAULT_TOKEN='{{ vault_keys.root_token }}'
-
-    PEPPER=$(vault kv get -field=pepper secret/{{ env }}/google-hash-service/vars)
-    LDAP_PASS=$(vault kv get -field=ADMIN_PASSWORD secret/{{ env }}/openldap/vars)
-
-    vault kv patch secret/{{ env }}/curity/vars \
-      GOOGLE_LDAP_PEPPER="$PEPPER" \
-      LDAP_ADMIN_PASSWORD="$LDAP_PASS"
-    EOF
-  no_log: true
-
 - name: Pomp gerenderde Curity XML config in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
@@ -343,6 +328,21 @@
     }
     JSON_PAYLOAD
     EOF
+    
+- name: Voeg GOOGLE_LDAP_PEPPER en LDAP_ADMIN_PASSWORD toe aan Curity vars
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    PEPPER=$(vault kv get -field=pepper secret/{{ env }}/google-hash-service/vars)
+    LDAP_PASS=$(vault kv get -field=ADMIN_PASSWORD secret/{{ env }}/openldap/vars)
+
+    vault kv patch secret/{{ env }}/curity/vars \
+      GOOGLE_LDAP_PEPPER="$PEPPER" \
+      LDAP_ADMIN_PASSWORD="$LDAP_PASS"
+    EOF
+  no_log: true
 
 - name: Configureer Vault voor Curity Toegang
   ansible.builtin.shell: |

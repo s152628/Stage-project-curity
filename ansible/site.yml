@@ -11,7 +11,7 @@
     - argocd_setup
     - vault_setup
     - tailscale_k8s_bridge
+    - curity_plugin_deploy
     - deploy_env
     - LDAP_setup
-    - curity_plugin_deploy
     - monitoring
