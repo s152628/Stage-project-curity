@@ -63,6 +63,13 @@
         resources:
           requests:
             storage: 50Mi
+- name: wacht tot Curity runtime en admin pods klaar zijn voordat je ze herstart
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
+      --for=condition=Ready pods \
+      -l app.kubernetes.io/name=idsvr,app.kubernetes.io/instance=curity-{{ env }}-stack \
+      -n curity-{{ env }} --timeout=180s
+  changed_when: false
 
 - name: Herstart Curity admin pod zodat de plugin wordt geladen
   ansible.builtin.shell: |
