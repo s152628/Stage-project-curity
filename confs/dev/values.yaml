@@ -26,8 +26,8 @@ curity:
      - curity-vars
   extraVolumes:
     - name: google-ldap-link-plugin
-      configMap:
-        name: google-ldap-link-plugin
+      persistentVolumeClaim:
+        claimName: curity-plugin-pvc
   admin:
     livenessProbe:
       initialDelaySeconds: 30

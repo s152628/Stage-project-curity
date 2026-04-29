@@ -1,3 +1,4 @@
+# ansible/roles/curity_plugin_deploy/tasks/main.yml
 ---
 - name: Controleer of de plugin JAR bestaat
   ansible.builtin.stat:
@@ -12,26 +13,56 @@
       Voer eerst uit: cd google-ldap-link-action && mvn clean package -DskipTests
   when: not plugin_jar.stat.exists
 
-- name: Encodeer plugin JAR naar base64
-  ansible.builtin.shell: |
-    base64 -w 0 {{ playbook_dir }}/../apps/curity-plugins/google-ldap-link/google-ldap-link-action-1.0.0-SNAPSHOT.jar
-  register: plugin_jar_base64
-  delegate_to: localhost
-  changed_when: false
-  no_log: true
+- name: Maak plugin directory aan op de VM
+  ansible.builtin.file:
+    path: /opt/curity-plugins/google-ldap-link
+    state: directory
+    mode: '0755'
 
-- name: Maak Kubernetes ConfigMap aan met plugin JAR
+- name: Kopieer plugin JAR naar de VM
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../apps/curity-plugins/google-ldap-link/google-ldap-link-action-1.0.0-SNAPSHOT.jar"
+    dest: /opt/curity-plugins/google-ldap-link/google-ldap-link-action.jar
+    mode: '0644'
+
+- name: Maak PersistentVolume aan voor plugin JAR
   kubernetes.core.k8s:
     kubeconfig: /etc/rancher/k3s/k3s.yaml
     state: present
     definition:
       apiVersion: v1
-      kind: ConfigMap
+      kind: PersistentVolume
       metadata:
-        name: google-ldap-link-plugin
+        name: curity-plugin-pv-{{ env }}
+      spec:
+        capacity:
+          storage: 50Mi
+        accessModes:
+          - ReadOnlyMany
+        persistentVolumeReclaimPolicy: Retain
+        storageClassName: ""
+        hostPath:
+          path: /opt/curity-plugins/google-ldap-link
+          type: Directory
+
+- name: Maak PersistentVolumeClaim aan voor plugin JAR
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: curity-plugin-pvc
         namespace: "curity-{{ env }}"
-      binaryData:
-        google-ldap-link-action.jar: "{{ plugin_jar_base64.stdout }}"
+      spec:
+        accessModes:
+          - ReadOnlyMany
+        storageClassName: ""
+        volumeName: curity-plugin-pv-{{ env }}
+        resources:
+          requests:
+            storage: 50Mi
 
 - name: Herstart Curity admin pod zodat de plugin wordt geladen
   ansible.builtin.shell: |
