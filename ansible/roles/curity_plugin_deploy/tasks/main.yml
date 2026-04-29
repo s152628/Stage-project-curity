@@ -1,0 +1,62 @@
+---
+- name: Controleer of de plugin JAR bestaat
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/../apps/curity-plugins/google-ldap-link/google-ldap-link-action-1.0.0-SNAPSHOT.jar"
+  register: plugin_jar
+  delegate_to: localhost
+
+- name: Stop als de JAR niet bestaat
+  ansible.builtin.fail:
+    msg: |
+      Plugin JAR niet gevonden.
+      Voer eerst uit: cd google-ldap-link-action && mvn clean package -DskipTests
+  when: not plugin_jar.stat.exists
+
+- name: Encodeer plugin JAR naar base64
+  ansible.builtin.shell: |
+    base64 -w 0 {{ playbook_dir }}/../apps/curity-plugins/google-ldap-link/google-ldap-link-action-1.0.0-SNAPSHOT.jar
+  register: plugin_jar_base64
+  delegate_to: localhost
+  changed_when: false
+  no_log: true
+
+- name: Maak Kubernetes ConfigMap aan met plugin JAR
+  kubernetes.core.k8s:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: google-ldap-link-plugin
+        namespace: "curity-{{ env }}"
+      binaryData:
+        google-ldap-link-action.jar: "{{ plugin_jar_base64.stdout }}"
+
+- name: Herstart Curity admin pod zodat de plugin wordt geladen
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout restart \
+      deployment/curity-{{ env }}-stack-idsvr-admin \
+      -n curity-{{ env }}
+  changed_when: true
+
+- name: Herstart Curity runtime pods zodat de plugin wordt geladen
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout restart \
+      deployment/curity-{{ env }}-stack-idsvr-runtime \
+      -n curity-{{ env }}
+  changed_when: true
+
+- name: Wacht tot Curity admin opnieuw beschikbaar is
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status \
+      deployment/curity-{{ env }}-stack-idsvr-admin \
+      -n curity-{{ env }} --timeout=120s
+  changed_when: false
+
+- name: Wacht tot Curity runtime opnieuw beschikbaar is
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status \
+      deployment/curity-{{ env }}-stack-idsvr-runtime \
+      -n curity-{{ env }} --timeout=180s
+  changed_when: false

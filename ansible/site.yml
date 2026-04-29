@@ -13,4 +13,5 @@
     - tailscale_k8s_bridge
     - deploy_env
     - LDAP_setup
+    - curity_plugin_deploy
     - monitoring

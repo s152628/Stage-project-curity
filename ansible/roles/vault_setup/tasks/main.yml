@@ -211,6 +211,51 @@
   delegate_to: localhost
   become: false
 
+- name: Genereer een cryptografisch veilige pepper (eenmalig per omgeving)
+  ansible.builtin.shell: |
+    python3 -c "import secrets; print(secrets.token_hex(64))"
+  register: generated_pepper
+  delegate_to: localhost
+  become: false
+
+- name: Controleer of de Google Hash Service pepper al bestaat in Vault
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -c "
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+    vault kv get secret/{{ env }}/google-hash-service/vars > /dev/null 2>&1
+    echo \$?"
+  register: pepper_exists
+  changed_when: false
+
+- name: Pomp Google Hash Service secrets in Vault (enkel als nog niet aanwezig)
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    vault kv put secret/{{ env }}/google-hash-service/vars \
+      pepper='{{ generated_pepper.stdout }}' \
+      ldap_admin_password='{{ openldap_admin_password }}'
+    EOF
+  when: pepper_exists.stdout.strip() != "0"
+  no_log: true
+
+- name: Voeg GOOGLE_LDAP_PEPPER en LDAP_ADMIN_PASSWORD toe aan Curity vars
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'
+    export VAULT_ADDR='http://127.0.0.1:8200'
+    export VAULT_TOKEN='{{ vault_keys.root_token }}'
+
+    PEPPER=$(vault kv get -field=pepper secret/{{ env }}/google-hash-service/vars)
+    LDAP_PASS=$(vault kv get -field=ADMIN_PASSWORD secret/{{ env }}/openldap/vars)
+
+    vault kv patch secret/{{ env }}/curity/vars \
+      GOOGLE_LDAP_PEPPER="$PEPPER" \
+      LDAP_ADMIN_PASSWORD="$LDAP_PASS"
+    EOF
+  no_log: true
+
 - name: Pomp gerenderde Curity XML config in Vault
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n vault vault-0 -c vault -- /bin/sh -s << 'EOF'

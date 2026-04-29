@@ -24,6 +24,10 @@ curity:
     environmentVariableSecrets:
      - curity-cluster-secret
      - curity-vars
+  extraVolumes:
+    - name: google-ldap-link-plugin
+      configMap:
+        name: google-ldap-link-plugin
   admin:
     livenessProbe:
       initialDelaySeconds: 30
@@ -42,6 +46,10 @@ curity:
       requests:
         cpu: 250m
         memory: 512Mi
+    extraVolumeMounts:
+      - name: google-ldap-link-plugin
+        mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
+        subPath: google-ldap-link-action.jar
   runtime:
     env:
       - name: LOGGING_LEVEL
@@ -68,6 +76,10 @@ curity:
         - name: metrics
           port: 4466
           targetPort: 4466
+    extraVolumeMounts:
+      - name: google-ldap-link-plugin
+        mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
+        subPath: google-ldap-link-action.jar
     
 ingress:
   enabled: true
