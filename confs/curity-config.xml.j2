@@ -205,12 +205,18 @@
 {%- elif auth.type == 'google' %}
             <authenticator>
               <id>{{ auth.id }}</id>
+{%- if auth.actions is defined and auth.actions | length > 0 %}
+              <authentication-actions>
+{%- for action_id in auth.actions %}
+                <login>{{ action_id }}</login>
+{%- endfor %}
+              </authentication-actions>
+{%- endif %}
               <google xmlns="https://curity.se/ns/conf/authenticators/google">
                 <client-id>#{GOOGLE_CLIENT_ID}</client-id>
                 <client-secret>#{GOOGLE_CLIENT_SECRET}</client-secret>
               </google>
             </authenticator>
-{%- endif %}
 {%- endif %}
 {%- endfor %}
           </authenticators>
