@@ -64,38 +64,3 @@
           requests:
             storage: 50Mi
 
-# - name: wacht tot Curity runtime en admin pods klaar zijn voordat je ze herstart
-#   ansible.builtin.shell: |
-#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
-#       --for=condition=Ready pods \
-#       -l app.kubernetes.io/name=idsvr,app.kubernetes.io/instance=curity-{{ env }}-stack \
-#       -n curity-{{ env }} --timeout=180s
-#   changed_when: false
-
-# - name: Herstart Curity admin pod zodat de plugin wordt geladen
-#   ansible.builtin.shell: |
-#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout restart \
-#       deployment/curity-{{ env }}-stack-idsvr-admin \
-#       -n curity-{{ env }}
-#   changed_when: true
-
-# - name: Herstart Curity runtime pods zodat de plugin wordt geladen
-#   ansible.builtin.shell: |
-#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout restart \
-#       deployment/curity-{{ env }}-stack-idsvr-runtime \
-#       -n curity-{{ env }}
-#   changed_when: true
-
-# - name: Wacht tot Curity admin opnieuw beschikbaar is
-#   ansible.builtin.shell: |
-#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status \
-#       deployment/curity-{{ env }}-stack-idsvr-admin \
-#       -n curity-{{ env }} --timeout=120s
-#   changed_when: false
-
-# - name: Wacht tot Curity runtime opnieuw beschikbaar is
-#   ansible.builtin.shell: |
-#     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml rollout status \
-#       deployment/curity-{{ env }}-stack-idsvr-runtime \
-#       -n curity-{{ env }} --timeout=180s
-#   changed_when: false

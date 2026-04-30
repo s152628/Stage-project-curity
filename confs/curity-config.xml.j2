@@ -96,19 +96,31 @@
 {%- set sms_provider = providers.sms_providers | selectattr('enabled', 'equalto', true) | first %}
           <sms-provider>{{ sms_provider.id }}</sms-provider>
 {%- endif %}
-{%- set mfa_authenticators = authenticators | selectattr('mfa_second_factor', 'defined') | list %}
-{%- if mfa_authenticators | length > 0 %}
+{%- if actions | default([]) | length > 0 %}
           <authentication-actions>
+{%- for action in actions %}
             <authentication-action>
-              <id>MFA</id>
+              <id>{{ action.id }}</id>
+{%- if action.type == 'multi-factor-condition' %}
               <multi-factor-condition xmlns="https://curity.se/ns/ext-conf/multi-factor-condition">
                 <always>
                   <second-factor>
-                    <id>{{ mfa_authenticators[0].mfa_second_factor }}</id>
+                    <id>{{ action.second_factor }}</id>
                   </second-factor>
                 </always>
               </multi-factor-condition>
+{%- elif action.type == 'google-ldap-link' %}
+              <google-ldap-link xmlns="https://curity.se/ns/ext-conf/google-ldap-link">
+                <ldap-admin-dn>#{LDAP_CLIENT_ID}</ldap-admin-dn>
+                <ldap-admin-password>#{LDAP_CLIENT_SECRET}</ldap-admin-password>
+                <ldap-base-dn>#{LDAP_DEFAULT_ROOT}</ldap-base-dn>
+                <ldap-host>#{LDAP_HOSTNAME}</ldap-host>
+                <ldap-port>#{LDAP_PORT}</ldap-port>
+                <pepper>#{GOOGLE_LDAP_PEPPER}</pepper>
+              </google-ldap-link>
+{%- endif %}
             </authentication-action>
+{%- endfor %}
           </authentication-actions>
 {%- endif %}
           <authenticators>
@@ -117,9 +129,11 @@
 {%- if auth.type == 'html_form' %}
             <authenticator>
               <id>{{ auth.id }}</id>
-{%- if auth.mfa_action is defined %}
+{%- if auth.actions is defined and auth.actions | length > 0 %}
               <authentication-actions>
-                <login>{{ auth.mfa_action }}</login>
+{%- for action_id in auth.actions %}
+                <login>{{ action_id }}</login>
+{%- endfor %}
               </authentication-actions>
 {%- endif %}
               <html-form xmlns="https://curity.se/ns/conf/authenticators/html-form">
@@ -446,8 +460,8 @@
             <search-filter-account-id>({{ ds.account_id_attribute | default('uid') }}={})</search-filter-account-id>
             <search-filter-username>({{ ds.username_attribute | default('uid') }}={})</search-filter-username>
             <search-filter-mail>(mail={})</search-filter-mail>
-            <active-state-attribute>objectClass</active-state-attribute>
-            <active-state-attribute-value>inetOrgPerson</active-state-attribute-value>
+            <active-state-attribute>{{ ds.active_state_attribute | default('accountState') }}</active-state-attribute>
+            <active-state-attribute-value>{{ ds.active_state_attribute_value | default('active') }}</active-state-attribute-value>
             <email-attribute>mail</email-attribute>
           </account>
           <attributes>
