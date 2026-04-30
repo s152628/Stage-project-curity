@@ -203,6 +203,7 @@
   vars:
     clients: "{{ curity_config.clients }}"
     authenticators: "{{ curity_config.authenticators }}"
+    actions: "{{ curity_config.actions | default([]) }}"
     scopes: "{{ curity_config.scopes }}"
     datasources: "{{ curity_config.datasources }}"
     providers: "{{ curity_config.providers }}"

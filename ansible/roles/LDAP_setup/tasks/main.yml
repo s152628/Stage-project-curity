@@ -22,6 +22,77 @@
 - name: pauzeer voor openLDAP tijd te geven om volledig op te starten
   ansible.builtin.pause:
     seconds: 5
+- name: Controleer of googleIdentity schema al bestaat
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapsearch -x -H ldap://localhost \
+      -D "cn=admin,cn=config" \
+      -w "{{ openldap_admin_password }}" \
+      -b "cn=schema,cn=config" \
+      "(cn=*googleIdentity*)" dn 2>/dev/null | grep -c "googleIdentity"
+  register: google_schema_exists
+  changed_when: false
+  failed_when: false
+
+- name: Schrijf googleIdentity schema LDIF naar de OpenLDAP pod
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      /bin/bash -c "cat > /tmp/google-schema.ldif << 'LDIF'
+    dn: cn=googleIdentity,cn=schema,cn=config
+    objectClass: olcSchemaConfig
+    cn: googleIdentity
+    olcAttributeTypes: ( 1.3.6.1.4.1.99999.1.1 NAME 'googleId' DESC 'Gehashte Google Subject ID' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+    olcAttributeTypes: ( 1.3.6.1.4.1.99999.1.2 NAME 'googleIdSalt' DESC 'Salt voor Google Subject hashing' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+    olcObjectClasses: ( 1.3.6.1.4.1.99999.2.1 NAME 'googleIdentity' DESC 'Google Identity koppeling' AUXILIARY MAY ( googleId $ googleIdSalt ) )
+    LDIF"
+  changed_when: false
+
+- name: Voeg googleIdentity schema toe aan OpenLDAP
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapadd -x -H ldap://localhost \
+      -D "cn=admin,cn=config" \
+      -w {{ openldap_admin_password }} \
+      -f /tmp/google-schema.ldif
+  register: schema_result
+  changed_when: schema_result.rc == 0
+  failed_when: schema_result.rc != 0 and 'Already exists' not in schema_result.stderr
+  
+- name: Controleer of activeState schema al bestaat
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapsearch -x -H ldap://localhost \
+      -D "cn=admin,cn=config" \
+      -w "{{ openldap_admin_password }}" \
+      -b "cn=schema,cn=config" \
+      "(cn=*activeState*)" dn 2>/dev/null | grep -c "activeState"
+  register: active_schema_exists
+  changed_when: false
+  failed_when: false
+
+
+- name: Schrijf active-state schema LDIF naar de OpenLDAP pod
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      /bin/bash -c "cat > /tmp/active-state-schema.ldif << 'LDIF'
+    dn: cn=activeState,cn=schema,cn=config
+    objectClass: olcSchemaConfig
+    cn: activeState
+    olcAttributeTypes: ( 1.3.6.1.4.1.99999.1.3 NAME 'accountState' DESC 'Account active state' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+    olcObjectClasses: ( 1.3.6.1.4.1.99999.2.2 NAME 'activeStateObject' DESC 'Active state object' AUXILIARY MAY ( accountState ) )
+    LDIF"
+  changed_when: false
+
+- name: Voeg active-state schema toe aan OpenLDAP
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapadd -x -H ldap://localhost \
+      -D "cn=admin,cn=config" \
+      -w {{ openldap_admin_password }} \
+      -f /tmp/active-state-schema.ldif
+  register: schema_result
+  changed_when: schema_result.rc == 0
+  failed_when: schema_result.rc != 0 and 'Already exists' not in schema_result.stderr
 
 - name: Vertaal JSON naar LDIF en injecteer direct in OpenLDAP voor {{ env }}
   ansible.builtin.shell: |
@@ -48,26 +119,23 @@
   failed_when: ldap_result.rc not in [0, 68]
   changed_when: ldap_result.rc == 0
 
-- name: Schrijf googleIdentity schema LDIF naar de OpenLDAP pod
+- name: Voeg accountState toe aan gebruikers
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
-      /bin/bash -c "cat > /tmp/google-schema.ldif << 'LDIF'
-    dn: cn=googleIdentity,cn=schema,cn=config
-    objectClass: olcSchemaConfig
-    cn: googleIdentity
-    olcAttributeTypes: ( 1.3.6.1.4.1.99999.1.1 NAME 'googleId' DESC 'Gehashte Google Subject ID' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
-    olcAttributeTypes: ( 1.3.6.1.4.1.99999.1.2 NAME 'googleIdSalt' DESC 'Salt voor Google Subject hashing' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
-    olcObjectClasses: ( 1.3.6.1.4.1.99999.2.1 NAME 'googleIdentity' DESC 'Google Identity koppeling' AUXILIARY MAY ( googleId $ googleIdSalt ) )
-    LDIF"
-  changed_when: false
+      ldapmodify -x -H ldap://localhost \
+      -D "cn=admin,dc=camazotz,dc=me" \
+      -w "{{ openldap_admin_password }}" << 'EOF'
+    {% for user in user_data.users %}
+    dn: uid={{ user.uid }},ou=people,dc=camazotz,dc=me
+    changetype: modify
+    add: objectClass
+    objectClass: activeStateObject
+    -
+    add: accountState
+    accountState: active
 
-- name: Voeg googleIdentity schema toe aan OpenLDAP
-  ansible.builtin.shell: |
-    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
-      ldapadd -x -H ldap://localhost \
-      -D "cn=admin,cn=config" \
-      -w {{ openldap_admin_password }} \
-      -f /tmp/google-schema.ldif
-  register: schema_result
-  changed_when: schema_result.rc == 0
-  failed_when: schema_result.rc != 0 and 'Already exists' not in schema_result.stderr
+    {% endfor %}
+    EOF
+  register: state_result
+  failed_when: state_result.rc != 0 and 'type or value exists' not in state_result.stderr
+  changed_when: state_result.rc == 0
