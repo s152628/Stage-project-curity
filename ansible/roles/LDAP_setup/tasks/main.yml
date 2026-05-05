@@ -22,6 +22,7 @@
 - name: pauzeer voor openLDAP tijd te geven om volledig op te starten
   ansible.builtin.pause:
     seconds: 5
+
 - name: Controleer of googleIdentity schema al bestaat
   ansible.builtin.shell: |
     kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
@@ -29,7 +30,7 @@
       -D "cn=admin,cn=config" \
       -w "{{ openldap_admin_password }}" \
       -b "cn=schema,cn=config" \
-      "(cn=*googleIdentity*)" dn 2>/dev/null | grep -c "googleIdentity"
+      "(olcAttributeTypes=*99999.1.1*)" dn 2>/dev/null | grep -q "googleIdentity"
   register: google_schema_exists
   changed_when: false
   failed_when: false
@@ -46,6 +47,7 @@
     olcObjectClasses: ( 1.3.6.1.4.1.99999.2.1 NAME 'googleIdentity' DESC 'Google Identity koppeling' AUXILIARY MAY ( googleId $ googleIdSalt ) )
     LDIF"
   changed_when: false
+  when: google_schema_exists.rc != 0
 
 - name: Voeg googleIdentity schema toe aan OpenLDAP
   ansible.builtin.shell: |
@@ -57,6 +59,7 @@
   register: schema_result
   changed_when: schema_result.rc == 0
   failed_when: schema_result.rc != 0 and 'Already exists' not in schema_result.stderr
+  when: google_schema_exists.rc != 0
   
 - name: Controleer of activeState schema al bestaat
   ansible.builtin.shell: |
@@ -65,11 +68,10 @@
       -D "cn=admin,cn=config" \
       -w "{{ openldap_admin_password }}" \
       -b "cn=schema,cn=config" \
-      "(cn=*activeState*)" dn 2>/dev/null | grep -c "activeState"
+      "(olcAttributeTypes=*99999.1.3*)" dn 2>/dev/null | grep -q "activeState"
   register: active_schema_exists
   changed_when: false
   failed_when: false
-
 
 - name: Schrijf active-state schema LDIF naar de OpenLDAP pod
   ansible.builtin.shell: |
@@ -82,6 +84,7 @@
     olcObjectClasses: ( 1.3.6.1.4.1.99999.2.2 NAME 'activeStateObject' DESC 'Active state object' AUXILIARY MAY ( accountState ) )
     LDIF"
   changed_when: false
+  when: active_schema_exists.rc != 0
 
 - name: Voeg active-state schema toe aan OpenLDAP
   ansible.builtin.shell: |
@@ -93,6 +96,19 @@
   register: schema_result
   changed_when: schema_result.rc == 0
   failed_when: schema_result.rc != 0 and 'Already exists' not in schema_result.stderr
+  when: active_schema_exists.rc != 0
+
+- name: Controleer of gebruikers al bestaan in OpenLDAP
+  ansible.builtin.shell: |
+    kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml exec -i -n curity-{{ env }} openldap-0 -- \
+      ldapsearch -x -H ldap://localhost \
+      -D "cn=admin,dc=camazotz,dc=me" \
+      -w "{{ openldap_admin_password }}" \
+      -b "ou=people,dc=camazotz,dc=me" \
+      "(objectClass=inetOrgPerson)" dn 2>/dev/null | grep -q "dn:"
+  register: users_exist
+  changed_when: false
+  failed_when: false
 
 - name: Vertaal JSON naar LDIF en injecteer direct in OpenLDAP voor {{ env }}
   ansible.builtin.shell: |
@@ -118,6 +134,7 @@
   register: ldap_result
   failed_when: ldap_result.rc not in [0, 68]
   changed_when: ldap_result.rc == 0
+  when: users_exist.rc != 0
 
 - name: Voeg accountState toe aan gebruikers
   ansible.builtin.shell: |
@@ -139,3 +156,5 @@
   register: state_result
   failed_when: state_result.rc != 0 and 'type or value exists' not in state_result.stderr
   changed_when: state_result.rc == 0
+  when: users_exist.rc != 0
+  
