@@ -112,11 +112,11 @@
 {%- elif action.type == 'google-ldap-link' %}
               <google-ldap-link xmlns="https://curity.se/ns/ext-conf/google-ldap-link">
                 <ldap-admin-dn>#{LDAP_CLIENT_ID}</ldap-admin-dn>
-                <ldap-admin-password>#{LDAP_ADMIN_PASSWORD}</ldap-admin-password>
+                <ldap-admin-password-env-var>LDAP_ADMIN_PASSWORD</ldap-admin-password-env-var>
                 <ldap-base-dn>#{LDAP_DEFAULT_ROOT}</ldap-base-dn>
                 <ldap-host>#{LDAP_HOSTNAME}</ldap-host>
                 <ldap-port>#{LDAP_PORT}</ldap-port>
-                <pepper>#{GOOGLE_LDAP_PEPPER}</pepper>
+                <pepper-env-var>GOOGLE_LDAP_PEPPER</pepper-env-var>
               </google-ldap-link>
 {%- endif %}
             </authentication-action>
