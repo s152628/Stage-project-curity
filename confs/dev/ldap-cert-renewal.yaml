@@ -1,0 +1,186 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ldap-cert-renewal-sa
+  namespace: curity-dev
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ldap-cert-renewal-role
+  namespace: curity-dev
+rules:
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets/status"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/status"]
+    verbs: ["get"]
+  - apiGroups: ["secrets.hashicorp.com"]
+    resources: ["vaultstaticsecrets"]
+    verbs: ["get", "patch", "update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ldap-cert-renewal-binding
+  namespace: curity-dev
+subjects:
+  - kind: ServiceAccount
+    name: ldap-cert-renewal-sa
+    namespace: curity-dev
+roleRef:
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+  name: ldap-cert-renewal-role
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ldap-cert-renewal
+  namespace: curity-dev
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: "true"
+            vault.hashicorp.com/agent-init-only: "true"
+            vault.hashicorp.com/role: "ldap-cert-renewal-dev"
+            vault.hashicorp.com/agent-inject-secret-vault-env: "secret/data/dev/openldap/tls"
+            vault.hashicorp.com/agent-inject-template-vault-env: |
+              {{- with secret "secret/data/dev/openldap/tls" -}}
+              export VAULT_TOKEN="{{ env "VAULT_TOKEN" }}"
+              {{- end -}}
+        spec:
+          serviceAccountName: ldap-cert-renewal-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: cert-renewal
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+
+                  VAULT_ADDR="http://vault.vault.svc.cluster.local:8200"
+                  ENV="dev"
+                  TTL_HOURS=1128
+                  RENEW_THRESHOLD_DAYS=7
+
+                  KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                  VAULT_TOKEN=$(curl -s \
+                    --request POST \
+                    --data "{\"jwt\": \"$KUBE_TOKEN\", \"role\": \"ldap-cert-renewal-$ENV\"}" \
+                    $VAULT_ADDR/v1/auth/kubernetes/login | \
+                    python3 -c "import json,sys; print(json.load(sys.stdin)['auth']['client_token'])")
+
+                  CURRENT_CERT=$(curl -s \
+                    --header "X-Vault-Token: $VAULT_TOKEN" \
+                    $VAULT_ADDR/v1/secret/data/$ENV/openldap/tls | \
+                    python3 -c "import json,sys; print(json.load(sys.stdin)['data']['data']['cert'])")
+
+                  EXPIRY=$(echo "$CURRENT_CERT" | \
+                    openssl x509 -noout -enddate 2>/dev/null | \
+                    cut -d= -f2)
+
+                  EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
+                  NOW_EPOCH=$(date +%s)
+                  DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+
+
+                  if [ "$DAYS_LEFT" -le "$RENEW_THRESHOLD_DAYS" ]; then
+
+                    # Genereer nieuw certificaat via Vault PKI
+                    NEW_CERT_JSON=$(curl -s \
+                      --header "X-Vault-Token: $VAULT_TOKEN" \
+                      --request POST \
+                      --data "{\"common_name\": \"openldap-service\", \"alt_names\": \"openldap-service.curity-$ENV.svc.cluster.local\", \"ttl\": \"${TTL_HOURS}h\"}" \
+                      $VAULT_ADDR/v1/pki_int/issue/ldap-cert)
+
+                    NEW_CERT=$(echo "$NEW_CERT_JSON" | \
+                      python3 -c "import json,sys; print(json.load(sys.stdin)['data']['certificate'])")
+                    NEW_KEY=$(echo "$NEW_CERT_JSON" | \
+                      python3 -c "import json,sys; print(json.load(sys.stdin)['data']['private_key'])")
+                    NEW_CA=$(echo "$NEW_CERT_JSON" | \
+                      python3 -c "import json,sys; print(json.load(sys.stdin)['data']['issuing_ca'])")
+
+                    # Sla nieuw certificaat op in Vault
+                    curl -s \
+                      --header "X-Vault-Token: $VAULT_TOKEN" \
+                      --request POST \
+                      --data "{\"data\": {\"cert\": \"$NEW_CERT\", \"key\": \"$NEW_KEY\", \"ca\": \"$NEW_CA\"}}" \
+                      $VAULT_ADDR/v1/secret/data/$ENV/openldap/tls
+
+
+                    # Update het CA certificaat in de Curity vars
+                    CURRENT_VARS=$(curl -s \
+                      --header "X-Vault-Token: $VAULT_TOKEN" \
+                      $VAULT_ADDR/v1/secret/data/$ENV/curity/vars | \
+                      python3 -c "import json,sys; print(json.dumps(json.load(sys.stdin)['data']['data']))")
+
+                    UPDATED_VARS=$(echo "$CURRENT_VARS" | \
+                      python3 -c "
+                      import json,sys
+                      d = json.load(sys.stdin)
+                      d['LDAP_CA_CERT'] = '''$NEW_CA'''
+                      print(json.dumps({'data': d}))
+                      ")
+
+                    curl -s \
+                      --header "X-Vault-Token: $VAULT_TOKEN" \
+                      --request POST \
+                      --data "$UPDATED_VARS" \
+                      $VAULT_ADDR/v1/secret/data/$ENV/curity/vars
+
+
+                    # Trigger VSO sync door annotatie te updaten
+                    kubectl annotate vaultstaticsecret curity-vars-sync \
+                      -n curity-$ENV \
+                      force-sync="$(date +%s)" \
+                      --overwrite
+
+                    kubectl annotate vaultstaticsecret ldap-tls-sync \
+                      -n curity-$ENV \
+                      force-sync="$(date +%s)" \
+                      --overwrite
+
+
+                    # Herstart OpenLDAP zodat het nieuwe certificaat wordt geladen
+                    kubectl rollout restart statefulset/openldap -n curity-$ENV
+                    kubectl rollout status statefulset/openldap \
+                      -n curity-$ENV --timeout=120s
+
+                    # Herstart Curity runtime zodat het nieuwe CA wordt geladen
+                    kubectl rollout restart \
+                      deployment/curity-$ENV-stack-idsvr-runtime \
+                      -n curity-$ENV
+                    kubectl rollout status \
+                      deployment/curity-$ENV-stack-idsvr-runtime \
+                      -n curity-$ENV --timeout=180s
+                  else
+                    echo "Certificaat nog geldig voor $DAYS_LEFT dagen — geen actie nodig."
+                  fi
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
