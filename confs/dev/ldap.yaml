@@ -31,23 +31,23 @@ spec:
         # TLS certificaat
         vault.hashicorp.com/agent-inject-secret-tls-cert: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-cert: |
-          {{- with secret "secret/data/dev/openldap/tls" -}}
+          {{ with secret "secret/data/dev/openldap/tls" }}
           {{ .Data.data.cert }}
-          {{- end -}}
+          {{ end }}
 
         # TLS private key
         vault.hashicorp.com/agent-inject-secret-tls-key: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-key: |
-          {{- with secret "secret/data/dev/openldap/tls" -}}
+          {{ with secret "secret/data/dev/openldap/tls" }}
           {{ .Data.data.key }}
-          {{- end -}}
+          {{ end }}
 
         # CA certificaat
         vault.hashicorp.com/agent-inject-secret-tls-ca: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-ca: |
-          {{- with secret "secret/data/dev/openldap/tls" -}}
+          {{ with secret "secret/data/dev/openldap/tls" }}
           {{ .Data.data.ca }}
-          {{- end -}}
+          {{ end }}
 
     spec:
       securityContext:
@@ -61,9 +61,9 @@ spec:
             - -c
             - |
               echo "Kopieer Vault TLS secrets naar cert directory..."
-              cp /vault/secrets/tls-cert /container/service/slapd/assets/certs/ldap.crt
-              cp /vault/secrets/tls-key /container/service/slapd/assets/certs/ldap.key
-              cp /vault/secrets/tls-ca /container/service/slapd/assets/certs/ca.crt
+              cat /vault/secrets/tls-cert > /container/service/slapd/assets/certs/ldap.crt
+              cat /vault/secrets/tls-key > /container/service/slapd/assets/certs/ldap.key
+              cat /vault/secrets/tls-ca > /container/service/slapd/assets/certs/ca.crt
               chmod 640 /container/service/slapd/assets/certs/ldap.key
               chmod 644 /container/service/slapd/assets/certs/ldap.crt
               chmod 644 /container/service/slapd/assets/certs/ca.crt
