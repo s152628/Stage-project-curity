@@ -60,7 +60,6 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo "Kopieer Vault TLS secrets naar cert directory..."
               cat /vault/secrets/tls-cert > /container/service/slapd/assets/certs/ldap.crt
               cat /vault/secrets/tls-key > /container/service/slapd/assets/certs/ldap.key
               cat /vault/secrets/tls-ca > /container/service/slapd/assets/certs/ca.crt
@@ -69,6 +68,7 @@ spec:
               chmod 644 /container/service/slapd/assets/certs/ca.crt
               echo "Certificaten gekopieerd."
               exec /container/tool/run --copy-service --loglevel debug
+              sleep infinity
           ports:
             - containerPort: 389
               name: ldap
