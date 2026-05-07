@@ -31,23 +31,23 @@ spec:
         # TLS certificaat
         vault.hashicorp.com/agent-inject-secret-tls-cert: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-cert: |
-          {{ with secret "secret/data/dev/openldap/tls" }}
+          {{- with secret "secret/data/dev/openldap/tls" -}}
           {{ .Data.data.cert }}
-          {{ end }}
+          {{- end -}}
 
         # TLS private key
         vault.hashicorp.com/agent-inject-secret-tls-key: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-key: |
-          {{ with secret "secret/data/dev/openldap/tls" }}
+          {{- with secret "secret/data/dev/openldap/tls" -}}
           {{ .Data.data.key }}
-          {{ end }}
+          {{- end -}}
 
         # CA certificaat
         vault.hashicorp.com/agent-inject-secret-tls-ca: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-ca: |
-          {{ with secret "secret/data/dev/openldap/tls" }}
+          {{- with secret "secret/data/dev/openldap/tls" -}}
           {{ .Data.data.ca }}
-          {{ end }}
+          {{- end -}}
 
     spec:
       securityContext:
@@ -102,6 +102,8 @@ spec:
               value: "never"
             - name: LDAP_TLS_CIPHER_SUITE
               value: "NORMAL"
+            - name: LDAP_TLS_DH_PARAM_FILENAME
+              value: "dhparam.pem"
           volumeMounts:
             - name: ldap-storage
               mountPath: /var/lib/ldap
@@ -111,10 +113,16 @@ spec:
               subPath: config
             - name: tls-certs
               mountPath: /container/service/slapd/assets/certs
+            - name: dhparams
+              mountPath: /container/service/slapd/assets/certs/dhparam.pem
+              subPath: dhparam.pem
 
       volumes:
         - name: tls-certs
           emptyDir: {}
+        - name: dhparams
+          configMap:
+            name: ldap-dhparams
 
   volumeClaimTemplates:
     - metadata:
