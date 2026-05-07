@@ -68,7 +68,7 @@ spec:
               chmod 644 /container/service/slapd/assets/certs/ldap.crt
               chmod 644 /container/service/slapd/assets/certs/ca.crt
               echo "Certificaten gekopieerd."
-              exec /container/tool/run --copy-service
+              exec /container/tool/run --copy-service --loglevel debug
           ports:
             - containerPort: 389
               name: ldap
