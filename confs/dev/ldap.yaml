@@ -17,6 +17,9 @@ spec:
       annotations:
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/role: "openldap-role-dev"
+        vault.hashicorp.com/agent-pre-populate-only: "false"
+        vault.hashicorp.com/agent-init-only: "false"
+        vault.hashicorp.com/agent-pre-populate: "true"
 
         # Admin wachtwoord
         vault.hashicorp.com/agent-inject-secret-admin-pass: "secret/data/dev/openldap/vars"
@@ -52,21 +55,41 @@ spec:
       serviceAccountName: openldap-sa
 
       initContainers:
-        - name: cert-setup
-          image: busybox:1.36
-          command:
-            - /bin/sh
-            - -c
-            - |
-              cp /vault/secrets/tls-cert /tls/ldap.crt
-              cp /vault/secrets/tls-key /tls/ldap.key
-              cp /vault/secrets/tls-ca /tls/ca.crt
-              chmod 640 /tls/ldap.key
-              chmod 644 /tls/ldap.crt /tls/ca.crt
-              echo "TLS certificaten gekopieerd naar /tls/"
-          volumeMounts:
-            - name: tls-certs
-              mountPath: /tls
+      - name: cert-setup
+        image: busybox:1.36
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Wachten tot Vault Agent secrets beschikbaar zijn..."
+            
+            # Wacht tot de Vault Agent de bestanden heeft aangemaakt
+            MAX_WAIT=60
+            WAITED=0
+            while [ ! -f /vault/secrets/tls-cert ] || \
+                  [ ! -s /vault/secrets/tls-cert ]; do
+              if [ $WAITED -ge $MAX_WAIT ]; then
+                echo "FOUT: Vault secrets niet beschikbaar na ${MAX_WAIT}s"
+                exit 1
+              fi
+              echo "Wachten op Vault secrets... (${WAITED}s)"
+              sleep 2
+              WAITED=$((WAITED + 2))
+            done
+            
+            echo "Vault secrets beschikbaar, certificaten kopiëren..."
+            cp /vault/secrets/tls-cert /tls/ldap.crt
+            cp /vault/secrets/tls-key /tls/ldap.key
+            cp /vault/secrets/tls-ca /tls/ca.crt
+            chmod 640 /tls/ldap.key
+            chmod 644 /tls/ldap.crt /tls/ca.crt
+            
+            echo "Controleer inhoud certificaten:"
+            head -1 /tls/ldap.crt
+            echo "TLS certificaten succesvol gekopieerd."
+        volumeMounts:
+          - name: tls-certs
+            mountPath: /tls
 
       containers:
         - name: openldap
