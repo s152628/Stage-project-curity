@@ -65,8 +65,6 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 | Variabele | Omschrijving | 
 | --- | --- |
 | RUNTIME_BASE_URL | De URL waar het runtime inteface beschikbaar is. |
-| ADMIN_USERNAME | De gebruikersnaam voor de Curity Admin UI en CLI .|
-| ADMIN _PASSWORD | Het wachtwoord voor de Curity Admin gebruiker. |
 | SYMMETRIC_KEY | Een willekeurige string (min. 32 tekens) gebruikt voor encryptie van data in rust (cookies/sessies). |
 | DB_CONNECTION | JDBC connection string voor de standaard/lokale database.| 
 | DB_PASSWORD | Wachtwoord voor de standaard database. |
@@ -75,12 +73,8 @@ De variabelen die gebruikt worden om het XML file aan te vullen. Het template vo
 | SIGNING_KEY | De private key die Curity gebruikt om JWT-tokens digitaal te ondertekenen. |
 | VERIFICATION_KEY | De publieke sleutel gebruikt om de handtekeningen van inkomende verzoeken te verifiëren. |
 | LICENSE_KEY | De volledige inhoud van het Curity licentie-bestand. |
-| CLIENT_1_ID | Unieke ID voor de eerste client (bijv. een interne tool voor introspectie). |
 | CLIENT_1_SECRET | Het wachtwoord (secret) voor de eerste client. |
-| CLIENT_2_ID | Unieke ID voor de tweede client (code flow). |
 | CLIENT_2_SECRET | Het wachtwoord (secret) voor de tweede client. |
-| CLIENT_2_REDIRECT_URL | De toegestane URL waar de gebruiker naar teruggestuurd mag worden na login. |
-| CLIENT_2_ORIGIN_URL | De toegestane basis-URL (Origin) voor CORS verzoeken van deze client. |
 | CLUSTER_KEY | De naam van de keystore die wordt gebruikt voor communicatie tussen nodes in het cluster.  |
 | ADMIN_SERVICE_HOST | De interne hostname of IP waar de admin-node op luistert (binnen K8s vaak de service-naam). |
 | DATABASE_DRIVER | De Java class name van de JDBC driver (bijv. org.postgresql.Driver). |
@@ -257,10 +251,7 @@ throttlers:
       "email": "E-mail adress van de gebruiker",
       "telephoneNumber": "Telefoon nummer van de gebruiker in internationaal formaat",
       "password": "Wachtwoord van de gebruiker",
-      "active_state": "True/False"
     }
   ]
 }
 ```
-
-test
