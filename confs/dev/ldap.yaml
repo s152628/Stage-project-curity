@@ -32,21 +32,21 @@ spec:
         vault.hashicorp.com/agent-inject-secret-tls-cert: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-cert: |
           {{- with secret "secret/data/dev/openldap/tls" -}}
-          {{ .Data.data.cert }}
+          {{- .Data.data.cert -}}
           {{- end -}}
 
         # TLS private key
         vault.hashicorp.com/agent-inject-secret-tls-key: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-key: |
           {{- with secret "secret/data/dev/openldap/tls" -}}
-          {{ .Data.data.key }}
+          {{- .Data.data.key -}}
           {{- end -}}
 
         # CA certificaat
         vault.hashicorp.com/agent-inject-secret-tls-ca: "secret/data/dev/openldap/tls"
         vault.hashicorp.com/agent-inject-template-tls-ca: |
           {{- with secret "secret/data/dev/openldap/tls" -}}
-          {{ .Data.data.ca }}
+          {{- .Data.data.ca -}}
           {{- end -}}
 
     spec:
