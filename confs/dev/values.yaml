@@ -46,19 +46,10 @@ curity:
       - name: google-ldap-link-plugin
         persistentVolumeClaim:
           claimName: curity-plugin-pvc
-      - name: ldap-ca
-        secret:
-          secretName: ldap-tls-secret
-          items:
-            - key: ca
-              path: ca.crt
     extraVolumeMounts:
       - name: google-ldap-link-plugin
         mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
         subPath: google-ldap-link-action.jar
-      - name: ldap-ca
-        mountPath: /opt/idsvr/etc/ldap-ca
-        readOnly: true
   runtime:
     env:
       - name: LOGGING_LEVEL
@@ -89,19 +80,10 @@ curity:
       - name: google-ldap-link-plugin
         persistentVolumeClaim:
           claimName: curity-plugin-pvc
-      - name: ldap-ca
-        secret:
-          secretName: ldap-tls-secret
-          items:
-            - key: ca
-              path: ca.crt
     extraVolumeMounts:
       - name: google-ldap-link-plugin
         mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
         subPath: google-ldap-link-action.jar
-      - name: ldap-ca
-        mountPath: /opt/idsvr/etc/ldap-ca
-        readOnly: true
     
 ingress:
   enabled: true
