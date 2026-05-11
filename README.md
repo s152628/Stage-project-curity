@@ -163,8 +163,8 @@ authenticators:
     email_provider: "<EMAIL_PROVIDER_ID>"       # vereist bij email flows
     throttler: "<THROTTLER_ID>"                 # rate limiting (optioneel)
 
-    mfa_action: "<MFA_ACTION>"                  # bv. MFA
-    mfa_second_factor: "<AUTH_ID>"              # tweede factor
+    actions:
+     - "<ACTION_ID>"                            # Toegepaste actions indien gewenst
 
     send_otp_as_code: <true|false>              # voor SMS/email
     allow_registration: <true|false>
@@ -173,6 +173,17 @@ authenticators:
     data_source: "<DATASOURCE_ID>"              # voor TOTP/passkey
     auto_redirect: <true|false>
     required_authenticator: "<AUTH_ID>"         # chaining van authenticators
+
+# -----------------------------------------------------------------------------
+# Actions
+# -----------------------------------------------------------------------------
+actions:
+  - id: "<LINK_ACTION_ID>"           # bv. google_LDAP_link
+    type: "<ACTION_TYPE>"            # bv. google-ldap-link
+
+  - id: "<MFA_ACTION_ID>"            # bv. MFA
+    type: "<ACTION_TYPE>"            # bv. multi-factor-condition
+    second_factor: "<AUTH_ID>"       # bv. email_authentication
 
 # -----------------------------------------------------------------------------
 # Scopes en claims (OpenID Connect)
