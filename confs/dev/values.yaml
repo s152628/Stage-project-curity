@@ -85,7 +85,7 @@ curity:
         mountPath: /opt/idsvr/usr/share/plugins/google-ldap-link/google-ldap-link-action.jar
         subPath: google-ldap-link-action.jar
     
-ingress:
+  ingress:
   enabled: true
   admin:
     enabled: true
